@@ -1,0 +1,79 @@
+{
+  "api": "cJSON_Parse",
+  "source_files": {
+    "outputs_json": "E:\\paper\\ctitanfuzz\\runtime_data\\illustrative_cjson_parse_v1\\mutation\\outputs.json",
+    "generation_log": "E:\\paper\\ctitanfuzz\\runtime_data\\illustrative_cjson_parse_v1\\mutation\\generation.log",
+    "args_txt": "E:\\paper\\ctitanfuzz\\runtime_data\\illustrative_cjson_parse_v1\\mutation\\args.txt"
+  },
+  "candidate_count": 104,
+  "valid_count": 29,
+  "exception_count": 14,
+  "crash_count": 0,
+  "notarget_count": 0,
+  "hang_count": 0,
+  "flaky_count": 0,
+  "duplicate_count": 61,
+  "unique_behavior_signature_count": 13,
+  "behavior_signature_counts": {
+    "{\"apis\": [\"cJSON_Parse\", \"cJSON_Delete\"], \"boundary_hints\": [\"empty\", \"malformed-input\", \"null\", \"truncated\"], \"call_skeleton\": [\"cJSON_Parse\", \"cJSON_Delete\", \"cJSON_Parse\", \"cJSON_Delete\", \"cJSON_Parse\", \"cJSON_Delete\"], \"construction_tags\": [], \"depth\": 4, \"risk_hits\": [\"cJSON_Delete\"], \"risk_paths\": [], \"target_calls\": 3}": 1,
+    "{\"apis\": [\"cJSON_Parse\", \"cJSON_Delete\"], \"boundary_hints\": [\"empty\", \"malformed-input\", \"null\", \"truncated\"], \"call_skeleton\": [\"cJSON_Parse\", \"cJSON_Delete\"], \"construction_tags\": [], \"depth\": 2, \"risk_hits\": [\"cJSON_Delete\"], \"risk_paths\": [], \"target_calls\": 1}": 1,
+    "{\"apis\": [\"cJSON_Parse\", \"cJSON_Delete\"], \"boundary_hints\": [\"empty\", \"malformed-input\", \"null\", \"truncated\"], \"call_skeleton\": [\"cJSON_Parse\", \"cJSON_Delete\"], \"construction_tags\": [], \"depth\": 4, \"risk_hits\": [\"cJSON_Delete\"], \"risk_paths\": [], \"target_calls\": 1}": 2,
+    "{\"apis\": [\"cJSON_Parse\", \"cJSON_Delete\"], \"boundary_hints\": [\"empty\", \"malformed-input\", \"null\"], \"call_skeleton\": [\"cJSON_Parse\", \"cJSON_Delete\", \"cJSON_Parse\", \"cJSON_Delete\", \"cJSON_Parse\", \"cJSON_Delete\"], \"construction_tags\": [\"string-literal\"], \"depth\": 4, \"risk_hits\": [\"cJSON_Delete\"], \"risk_paths\": [], \"target_calls\": 3}": 1,
+    "{\"apis\": [\"cJSON_Parse\", \"cJSON_Delete\"], \"boundary_hints\": [\"empty\", \"malformed-input\", \"null\"], \"call_skeleton\": [\"cJSON_Parse\", \"cJSON_Delete\", \"cJSON_Parse\", \"cJSON_Delete\"], \"construction_tags\": [], \"depth\": 4, \"risk_hits\": [\"cJSON_Delete\"], \"risk_paths\": [], \"target_calls\": 2}": 3,
+    "{\"apis\": [\"cJSON_Parse\", \"cJSON_Delete\"], \"boundary_hints\": [\"empty\", \"malformed-input\", \"null\"], \"call_skeleton\": [\"cJSON_Parse\", \"cJSON_Delete\"], \"construction_tags\": [], \"depth\": 2, \"risk_hits\": [\"cJSON_Delete\"], \"risk_paths\": [], \"target_calls\": 1}": 3,
+    "{\"apis\": [\"cJSON_Parse\", \"cJSON_Delete\"], \"boundary_hints\": [\"empty\", \"malformed-input\", \"null\"], \"call_skeleton\": [\"cJSON_Parse\", \"cJSON_Delete\"], \"construction_tags\": [], \"depth\": 4, \"risk_hits\": [\"cJSON_Delete\"], \"risk_paths\": [], \"target_calls\": 1}": 4,
+    "{\"apis\": [\"cJSON_Parse\", \"cJSON_Delete\"], \"boundary_hints\": [\"empty\", \"malformed-input\", \"truncated\"], \"call_skeleton\": [\"cJSON_Parse\", \"cJSON_Delete\"], \"construction_tags\": [], \"depth\": 4, \"risk_hits\": [\"cJSON_Delete\"], \"risk_paths\": [], \"target_calls\": 1}": 1,
+    "{\"apis\": [\"cJSON_Parse\", \"cJSON_Delete\"], \"boundary_hints\": [\"empty\", \"malformed-input\"], \"call_skeleton\": [\"cJSON_Parse\", \"cJSON_Delete\", \"cJSON_Parse\", \"cJSON_Delete\"], \"construction_tags\": [\"string-literal\"], \"depth\": 4, \"risk_hits\": [\"cJSON_Delete\"], \"risk_paths\": [], \"target_calls\": 2}": 2,
+    "{\"apis\": [\"cJSON_Parse\", \"cJSON_Delete\"], \"boundary_hints\": [\"empty\", \"malformed-input\"], \"call_skeleton\": [\"cJSON_Parse\", \"cJSON_Delete\", \"cJSON_Parse\"], \"construction_tags\": [\"string-literal\"], \"depth\": 4, \"risk_hits\": [\"cJSON_Delete\"], \"risk_paths\": [], \"target_calls\": 2}": 2,
+    "{\"apis\": [\"cJSON_Parse\", \"cJSON_Delete\"], \"boundary_hints\": [\"empty\", \"malformed-input\"], \"call_skeleton\": [\"cJSON_Parse\", \"cJSON_Delete\"], \"construction_tags\": [\"string-literal\"], \"depth\": 4, \"risk_hits\": [\"cJSON_Delete\"], \"risk_paths\": [], \"target_calls\": 1}": 1,
+    "{\"apis\": [\"cJSON_Parse\", \"cJSON_Delete\"], \"boundary_hints\": [\"empty\", \"malformed-input\"], \"call_skeleton\": [\"cJSON_Parse\", \"cJSON_Delete\"], \"construction_tags\": [], \"depth\": 4, \"risk_hits\": [\"cJSON_Delete\"], \"risk_paths\": [], \"target_calls\": 1}": 4,
+    "{\"apis\": [\"cJSON_Parse\", \"cJSON_Print\", \"cJSON_Delete\"], \"boundary_hints\": [\"empty\", \"malformed-input\", \"null\"], \"call_skeleton\": [\"cJSON_Parse\", \"cJSON_Print\", \"cJSON_Delete\"], \"construction_tags\": [], \"depth\": 3, \"risk_hits\": [\"cJSON_Delete\"], \"risk_paths\": [], \"target_calls\": 1}": 4
+  },
+  "accepted_generated_record_count": 29,
+  "seed_count": 6,
+  "wall_clock_sec": 1200.2267332077026,
+  "generation_time_sec": 1162.0871040821075,
+  "validation_time_sec": 35.87836170196533,
+  "log_summary": {
+    "path": "E:\\paper\\ctitanfuzz\\runtime_data\\illustrative_cjson_parse_v1\\mutation\\generation.log",
+    "parsed": {
+      "generated": 104,
+      "exception": 14,
+      "duplicate": 61,
+      "crash": 0,
+      "timeout": 0,
+      "notarget": 0,
+      "valid_outputs": 29,
+      "generation_time_sec": 1162.09,
+      "validation_time_sec": 35.88
+    },
+    "tail": [
+      "    for (size_t i = 0; i < sizeof(inputs)/sizeof(inputs[0]); ++i) {",
+      "        cJSON *json = cJSON_Parse(inputs[i]);",
+      "        if (json) {",
+      "            printf(\"Input %zu: parsed successfully\\n\", i);",
+      "            cJSON_Delete(json);",
+      "        } else {",
+      "            printf(\"Input %zu: parse failed (as expected)\\n\", i);",
+      "        }",
+      "    }",
+      "cJSON *malformed_json = cJSON_Parse(malformed_input);",
+      "    if (!malformed_json) {",
+      "        printf(\"Malformed input: parse failed (expected)\\n\");",
+      "    }",
+      "",
+      "    return 0;",
+      "}",
+      "",
+      "-----",
+      "29 valid outputs using 1162.09s generation, 35.88s validation",
+      "104 generated: 14 exceptions 61 duplicated 0 crashes 0 timeouts 0 notarget"
+    ]
+  },
+  "token_usage": {
+    "available": true,
+    "prompt_tokens": 74748,
+    "completion_tokens": 4041,
+    "total_tokens": 78789
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "exported_at_utc": "2026-04-25T14:12:24.543632+00:00",
+  "runtime_root": "E:\\paper\\ctitanfuzz\\runtime_data\\illustrative_cjson_parse_v1",
+  "api": "cJSON_Parse",
+  "artifacts": {
+    "stage1_seed_summary": "E:\\paper\\ctitanfuzz\\paper_artifacts\\illustrative\\stage1_seed_summary.json",
+    "stage2_mutation_snapshot": "E:\\paper\\ctitanfuzz\\paper_artifacts\\illustrative\\stage2_mutation_snapshot.json",
+    "output_tree": "E:\\paper\\ctitanfuzz\\paper_artifacts\\illustrative\\output_tree.txt",
+    "manifest": "E:\\paper\\ctitanfuzz\\paper_artifacts\\illustrative\\manifest.md",
+    "seed_bank": "E:\\paper\\ctitanfuzz\\paper_artifacts\\illustrative\\seed_bank.json"
+  }
+}

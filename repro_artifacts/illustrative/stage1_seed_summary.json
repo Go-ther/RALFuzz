@@ -1,0 +1,251 @@
+{
+  "api": "cJSON_Parse",
+  "source_files": {
+    "summary_json": "E:\\paper\\ctitanfuzz\\runtime_data\\illustrative_cjson_parse_v1\\seed_generation\\summary.json",
+    "outputs_json": "E:\\paper\\ctitanfuzz\\runtime_data\\illustrative_cjson_parse_v1\\seed_generation\\outputs.json",
+    "seed_bank_json": "E:\\paper\\ctitanfuzz\\runtime_data\\illustrative_cjson_parse_v1\\seed_generation\\seed_bank.json"
+  },
+  "summary": {
+    "total_apis_loaded": 1,
+    "total_apis_generated": 1,
+    "total_samples": 6,
+    "total_samples_received": 6,
+    "total_valid_seeds": 6,
+    "unique_valid_seed_count": 6,
+    "compile_rate": 1.0,
+    "run_rate": 1.0,
+    "target_api_hit_rate": 1.0,
+    "init_path_hit_rate": 0.0,
+    "cleanup_path_hit_rate": 1.0,
+    "aligned_risk_relevance_rate": 1.0,
+    "raw_risk_marker_rate": 0.6666666666666666,
+    "risk_relevance_rate": 1.0,
+    "runtime_hit_observation_rate": 1.0,
+    "avg_aligned_risk_score": 0.6000000000000001,
+    "token_usage": {
+      "available": true,
+      "prompt_tokens": 2052,
+      "completion_tokens": 1307,
+      "total_tokens": 3359
+    },
+    "elapsed_sec": 268.5443949699402,
+    "args": {
+      "api_spec_file": null,
+      "auto_api_dir": [
+        "E:\\paper\\ctitanfuzz\\mutation\\api\\cJSON"
+      ],
+      "auto_header_glob": [],
+      "auto_exclude_header_glob": [],
+      "auto_style": "auto",
+      "auto_api_name_regex": "^cJSON_Parse$",
+      "auto_non_recursive": false,
+      "auto_sort": false,
+      "output_dir": "E:\\paper\\ctitanfuzz\\runtime_data\\illustrative_cjson_parse_v1\\seed_generation",
+      "base_url": "http://localhost:11434",
+      "api_key": "ollama",
+      "model": "qwen3-coder:480b-cloud",
+      "endpoint_mode": "ollama",
+      "single_shot_delay_ms": 0,
+      "library_name": "cJSON",
+      "library_version": "unknown",
+      "default_header": "stdio.h",
+      "doc_url_template": null,
+      "prompt_template_file": "E:\\paper\\ctitanfuzz\\seed_generation\\templates\\prompt_steps_c.txt",
+      "samples_per_api": 8,
+      "target_valid_per_api": 6,
+      "temperature": 0.35,
+      "top_p": 0.9,
+      "max_tokens": 2048,
+      "retry_on_truncation": 0,
+      "truncation_retry_max_tokens": 1024,
+      "truncation_retry_temperature": 0.35,
+      "truncation_retry_top_p": 0.9,
+      "truncation_retry_max_lines": 96,
+      "truncation_retry_min_marker_kinds": 1,
+      "truncation_retry_require_boundary_value": true,
+      "truncation_retry_require_high_risk_neighbor": false,
+      "request_timeout": 120,
+      "crawl_timeout": 20,
+      "compiler": "gcc",
+      "c_standard": "c11",
+      "cflags": "-IE:\\paper\\ctitanfuzz\\mutation\\api\\cJSON",
+      "ldflags": "E:\\paper\\ctitanfuzz\\mutation\\api\\cJSON\\cJSON.c E:\\paper\\ctitanfuzz\\mutation\\api\\cJSON\\cJSON_Utils.c",
+      "compile_timeout": 15,
+      "run_timeout": 3,
+      "skip_run_validation": false,
+      "overwrite_existing": true,
+      "auto_wrap_main": true,
+      "source_dir": [
+        "E:\\paper\\ctitanfuzz\\mutation\\api\\cJSON"
+      ],
+      "source_file_pattern": [
+        "*.c"
+      ],
+      "max_source_files": 1000,
+      "max_neighbor_apis": 6,
+      "max_init_candidates": 3,
+      "max_cleanup_candidates": 3,
+      "max_chain_len": 4,
+      "risk_cards_file": null,
+      "max_risk_tags": 6,
+      "max_boundary_hints": 6,
+      "require_init_cleanup": true,
+      "risk_relevance_policy": "auto",
+      "risk_prompt_hardening": true,
+      "include_risk_card": true,
+      "risk_min_marker_kinds": 1,
+      "risk_require_boundary_value": true,
+      "risk_require_high_risk_neighbor": false,
+      "risk_boost_retries": 0,
+      "risk_boost_temperature": 0.72,
+      "risk_boost_top_p": 0.98,
+      "enforce_init_target_order": false,
+      "max_per_skeleton": 2,
+      "disable_text_dedup": false
+    }
+  },
+  "api_record": {
+    "api_name": "cJSON_Parse",
+    "api_signature": "cJSON * cJSON_Parse(const char *value);",
+    "samples_requested": 8,
+    "samples_attempted": 6,
+    "samples_received": 6,
+    "target_valid_per_api": 6,
+    "validation_passed_count": 6,
+    "valid_count": 6,
+    "g_time_sec": 268.52377128601074,
+    "token_usage": {
+      "available": true,
+      "prompt_tokens": 2052,
+      "completion_tokens": 1307,
+      "total_tokens": 3359
+    },
+    "quality_metrics": {
+      "compile_ok_count": 6,
+      "run_ok_count": 6,
+      "target_hit_count": 6,
+      "init_hit_count": 0,
+      "cleanup_hit_count": 6,
+      "risk_hit_count": 6,
+      "raw_risk_hit_count": 4,
+      "runtime_hits_observed_count": 6,
+      "compile_rate": 1.0,
+      "run_rate": 1.0,
+      "target_api_hit_rate": 1.0,
+      "init_path_hit_rate": 0.0,
+      "cleanup_path_hit_rate": 1.0,
+      "aligned_risk_relevance_rate": 1.0,
+      "raw_risk_marker_rate": 0.6666666666666666,
+      "risk_relevance_rate": 1.0,
+      "runtime_hit_observation_rate": 1.0,
+      "avg_aligned_risk_score": 0.6000000000000001,
+      "avg_call_chain_length": 10.833333333333334,
+      "unique_valid_seed_count": 6
+    },
+    "endpoint_used": "ollama"
+  },
+  "record_reason_counts": {
+    "ok": 6
+  },
+  "validation_reason_counts": {
+    "ok": 6
+  },
+  "seed_bank_entry": {
+    "target_api": "cJSON_Parse",
+    "api_signature": "cJSON * cJSON_Parse(const char *value);",
+    "execution_context": {
+      "init_path": [
+        "cJSON_ParseWithOpts",
+        "cJSON_ParseWithLength",
+        "cJSON_ParseWithLengthOpts"
+      ],
+      "cleanup_path": [
+        "cJSON_free",
+        "cJSON_Delete",
+        "cJSON_DeleteItemFromArray"
+      ],
+      "neighbor_apis": [
+        "cJSON_ParseWithOpts",
+        "cJSON_ParseWithLength",
+        "cJSON_ParseWithLengthOpts",
+        "cJSON_PrintPreallocated",
+        "cJSON_free",
+        "cJSON_Delete"
+      ],
+      "short_call_chain_template": [
+        "cJSON_ParseWithOpts",
+        "cJSON_ParseWithLength",
+        "cJSON_Parse",
+        "cJSON_free"
+      ],
+      "source_files_scanned": 76
+    },
+    "risk_context": {
+      "risk_level": "medium",
+      "risk_tags": [
+        "input-structure",
+        "parser-state",
+        "pointer-lifetime",
+        "cleanup-sensitive"
+      ],
+      "boundary_hints": [
+        "Use malformed, truncated, oversized, and deeply nested inputs.",
+        "Try invalid encodings and random binary payloads.",
+        "Test NULL, aliasing, and repeated pointer reuse patterns."
+      ],
+      "history_summary": "Parser-like APIs often fail on malformed nesting and length mismatches.",
+      "high_risk_neighbors": [
+        "cJSON_ParseWithOpts",
+        "cJSON_ParseWithLength",
+        "cJSON_ParseWithLengthOpts",
+        "cJSON_PrintPreallocated",
+        "cJSON_free",
+        "cJSON_Delete"
+      ]
+    },
+    "seeds": [
+      {
+        "seed_id": 1,
+        "from_completion_id": 1,
+        "file": "E:\\paper\\ctitanfuzz\\runtime_data\\illustrative_cjson_parse_v1\\seed_generation\\fix\\cJSON_Parse\\1.c",
+        "skeleton_key": "cJSON_Parse|none|cJSON_Delete|cJSON_Delete|zero,one,empty_str|deep-structure",
+        "text_hash": "ba5e4fd92e68b12c928b9adad34ffc600dedc631242aea27635b428571f9c402"
+      },
+      {
+        "seed_id": 2,
+        "from_completion_id": 2,
+        "file": "E:\\paper\\ctitanfuzz\\runtime_data\\illustrative_cjson_parse_v1\\seed_generation\\fix\\cJSON_Parse\\2.c",
+        "skeleton_key": "cJSON_Parse|none|cJSON_Delete|cJSON_Delete|zero,null,empty_str|malformed-input,binary-payload,deep-structure",
+        "text_hash": "0f223a90a94b2edfc9c328c52c7fb495b26739cc6cd9b44064fadb2711aa5b02"
+      },
+      {
+        "seed_id": 3,
+        "from_completion_id": 3,
+        "file": "E:\\paper\\ctitanfuzz\\runtime_data\\illustrative_cjson_parse_v1\\seed_generation\\fix\\cJSON_Parse\\3.c",
+        "skeleton_key": "cJSON_Parse|none|cJSON_Delete|cJSON_Delete|zero,null,empty_str|none",
+        "text_hash": "b582c9549e253ba1aaab35d9dff2905f613523e66ad9921cf75353c532cee1f7"
+      },
+      {
+        "seed_id": 4,
+        "from_completion_id": 4,
+        "file": "E:\\paper\\ctitanfuzz\\runtime_data\\illustrative_cjson_parse_v1\\seed_generation\\fix\\cJSON_Parse\\4.c",
+        "skeleton_key": "cJSON_Parse|none|cJSON_Delete|cJSON_Delete|zero,one,null,empty_str|malformed-input,deep-structure",
+        "text_hash": "453c645621074a54fd49f7c06b3b902a75fb8f3fc72c321c6b9bc8eeedb88d1c"
+      },
+      {
+        "seed_id": 5,
+        "from_completion_id": 5,
+        "file": "E:\\paper\\ctitanfuzz\\runtime_data\\illustrative_cjson_parse_v1\\seed_generation\\fix\\cJSON_Parse\\5.c",
+        "skeleton_key": "cJSON_Parse|none|cJSON_Delete|cJSON_Delete|zero,null,empty_str|deep-structure",
+        "text_hash": "0e0bc7b3e53219a2920b0bdaf083de3dfab69b8576c78bc8273a93789f0eb8f0"
+      },
+      {
+        "seed_id": 6,
+        "from_completion_id": 6,
+        "file": "E:\\paper\\ctitanfuzz\\runtime_data\\illustrative_cjson_parse_v1\\seed_generation\\fix\\cJSON_Parse\\6.c",
+        "skeleton_key": "cJSON_Parse|none|cJSON_Delete|cJSON_Delete|zero,null,empty_str|none",
+        "text_hash": "31a32f6167c605e44db17c5a4d89e28be5e0edcd85d0894761848b7048fddc40"
+      }
+    ]
+  }
+}

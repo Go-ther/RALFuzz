@@ -1,0 +1,74 @@
+illustrative_cjson_parse_v1/
+|-- cache/
+|   |-- build/
+|   |-- metadata/
+|   |   `-- targets/
+|   `-- temp/
+|-- mutation/
+|   |-- crash/
+|   |-- exception/
+|   |   |-- cJSON_Parse_100.c
+|   |   |-- cJSON_Parse_25.c
+|   |   |-- cJSON_Parse_37.c
+|   |   |-- cJSON_Parse_38.c
+|   |   |-- cJSON_Parse_39.c
+|   |   |-- cJSON_Parse_40.c
+|   |   |-- cJSON_Parse_47.c
+|   |   |-- cJSON_Parse_54.c
+|   |   |-- cJSON_Parse_56.c
+|   |   |-- cJSON_Parse_65.c
+|   |   |-- cJSON_Parse_66.c
+|   |   |-- cJSON_Parse_73.c
+|   |   |-- cJSON_Parse_97.c
+|   |   `-- cJSON_Parse_98.c
+|   |-- flaky/
+|   |-- hangs/
+|   |-- notarget/
+|   |-- seed/
+|   |   |-- cJSON_Parse_seed1.c
+|   |   |-- cJSON_Parse_seed2.c
+|   |   |-- cJSON_Parse_seed3.c
+|   |   |-- cJSON_Parse_seed4.c
+|   |   |-- cJSON_Parse_seed5.c
+|   |   `-- cJSON_Parse_seed6.c
+|   |-- valid/
+|   |   |-- cJSON_Parse_1.c
+|   |   |-- cJSON_Parse_13.c
+|   |   |-- cJSON_Parse_2.c
+|   |   |-- cJSON_Parse_28.c
+|   |   |-- cJSON_Parse_3.c
+|   |   |-- cJSON_Parse_33.c
+|   |   |-- cJSON_Parse_45.c
+|   |   |-- cJSON_Parse_46.c
+|   |   |-- cJSON_Parse_49.c
+|   |   |-- cJSON_Parse_51.c
+|   |   |-- cJSON_Parse_53.c
+|   |   |-- cJSON_Parse_55.c
+|   |   |-- cJSON_Parse_57.c
+|   |   |-- cJSON_Parse_58.c
+|   |   |-- cJSON_Parse_59.c
+|   |   |-- cJSON_Parse_60.c
+|   |   |-- cJSON_Parse_61.c
+|   |   |-- cJSON_Parse_69.c
+|   |   |-- cJSON_Parse_7.c
+|   |   |-- cJSON_Parse_70.c
+|   |   |-- cJSON_Parse_71.c
+|   |   |-- cJSON_Parse_72.c
+|   |   |-- cJSON_Parse_85.c
+|   |   |-- cJSON_Parse_87.c
+|   |   |-- cJSON_Parse_88.c
+|   |   |-- cJSON_Parse_89.c
+|   |   |-- cJSON_Parse_9.c
+|   |   |-- cJSON_Parse_91.c
+|   |   `-- cJSON_Parse_99.c
+|   |-- args.txt
+|   |-- generation.log
+|   `-- outputs.json
+`-- seed_generation/
+    |-- fix/
+    |   `-- cJSON_Parse/
+    |-- raw/
+    |   `-- cJSON_Parse/
+    |-- outputs.json
+    |-- seed_bank.json
+    `-- summary.json

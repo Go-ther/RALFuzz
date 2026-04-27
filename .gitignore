@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Editor
+.vscode/
+
+# OS / logs
+*.log
+.DS_Store
+Thumbs.db
+
+# Local env
+.env
+.venv/
+venv/
+
+# Test / tooling caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Runtime outputs and caches
+runtime_data/
+
+# Packaging / release archives
+*.egg-info/
+dist/
+build/
+*.zip
+*.tar.gz

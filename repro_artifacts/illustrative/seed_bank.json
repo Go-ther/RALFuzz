@@ -1,0 +1,100 @@
+{
+  "cJSON_Parse": {
+    "target_api": "cJSON_Parse",
+    "api_signature": "cJSON * cJSON_Parse(const char *value);",
+    "execution_context": {
+      "init_path": [
+        "cJSON_ParseWithOpts",
+        "cJSON_ParseWithLength",
+        "cJSON_ParseWithLengthOpts"
+      ],
+      "cleanup_path": [
+        "cJSON_free",
+        "cJSON_Delete",
+        "cJSON_DeleteItemFromArray"
+      ],
+      "neighbor_apis": [
+        "cJSON_ParseWithOpts",
+        "cJSON_ParseWithLength",
+        "cJSON_ParseWithLengthOpts",
+        "cJSON_PrintPreallocated",
+        "cJSON_free",
+        "cJSON_Delete"
+      ],
+      "short_call_chain_template": [
+        "cJSON_ParseWithOpts",
+        "cJSON_ParseWithLength",
+        "cJSON_Parse",
+        "cJSON_free"
+      ],
+      "source_files_scanned": 76
+    },
+    "risk_context": {
+      "risk_level": "medium",
+      "risk_tags": [
+        "input-structure",
+        "parser-state",
+        "pointer-lifetime",
+        "cleanup-sensitive"
+      ],
+      "boundary_hints": [
+        "Use malformed, truncated, oversized, and deeply nested inputs.",
+        "Try invalid encodings and random binary payloads.",
+        "Test NULL, aliasing, and repeated pointer reuse patterns."
+      ],
+      "history_summary": "Parser-like APIs often fail on malformed nesting and length mismatches.",
+      "high_risk_neighbors": [
+        "cJSON_ParseWithOpts",
+        "cJSON_ParseWithLength",
+        "cJSON_ParseWithLengthOpts",
+        "cJSON_PrintPreallocated",
+        "cJSON_free",
+        "cJSON_Delete"
+      ]
+    },
+    "seeds": [
+      {
+        "seed_id": 1,
+        "from_completion_id": 1,
+        "file": "E:\\paper\\ctitanfuzz\\runtime_data\\illustrative_cjson_parse_v1\\seed_generation\\fix\\cJSON_Parse\\1.c",
+        "skeleton_key": "cJSON_Parse|none|cJSON_Delete|cJSON_Delete|zero,one,empty_str|deep-structure",
+        "text_hash": "ba5e4fd92e68b12c928b9adad34ffc600dedc631242aea27635b428571f9c402"
+      },
+      {
+        "seed_id": 2,
+        "from_completion_id": 2,
+        "file": "E:\\paper\\ctitanfuzz\\runtime_data\\illustrative_cjson_parse_v1\\seed_generation\\fix\\cJSON_Parse\\2.c",
+        "skeleton_key": "cJSON_Parse|none|cJSON_Delete|cJSON_Delete|zero,null,empty_str|malformed-input,binary-payload,deep-structure",
+        "text_hash": "0f223a90a94b2edfc9c328c52c7fb495b26739cc6cd9b44064fadb2711aa5b02"
+      },
+      {
+        "seed_id": 3,
+        "from_completion_id": 3,
+        "file": "E:\\paper\\ctitanfuzz\\runtime_data\\illustrative_cjson_parse_v1\\seed_generation\\fix\\cJSON_Parse\\3.c",
+        "skeleton_key": "cJSON_Parse|none|cJSON_Delete|cJSON_Delete|zero,null,empty_str|none",
+        "text_hash": "b582c9549e253ba1aaab35d9dff2905f613523e66ad9921cf75353c532cee1f7"
+      },
+      {
+        "seed_id": 4,
+        "from_completion_id": 4,
+        "file": "E:\\paper\\ctitanfuzz\\runtime_data\\illustrative_cjson_parse_v1\\seed_generation\\fix\\cJSON_Parse\\4.c",
+        "skeleton_key": "cJSON_Parse|none|cJSON_Delete|cJSON_Delete|zero,one,null,empty_str|malformed-input,deep-structure",
+        "text_hash": "453c645621074a54fd49f7c06b3b902a75fb8f3fc72c321c6b9bc8eeedb88d1c"
+      },
+      {
+        "seed_id": 5,
+        "from_completion_id": 5,
+        "file": "E:\\paper\\ctitanfuzz\\runtime_data\\illustrative_cjson_parse_v1\\seed_generation\\fix\\cJSON_Parse\\5.c",
+        "skeleton_key": "cJSON_Parse|none|cJSON_Delete|cJSON_Delete|zero,null,empty_str|deep-structure",
+        "text_hash": "0e0bc7b3e53219a2920b0bdaf083de3dfab69b8576c78bc8273a93789f0eb8f0"
+      },
+      {
+        "seed_id": 6,
+        "from_completion_id": 6,
+        "file": "E:\\paper\\ctitanfuzz\\runtime_data\\illustrative_cjson_parse_v1\\seed_generation\\fix\\cJSON_Parse\\6.c",
+        "skeleton_key": "cJSON_Parse|none|cJSON_Delete|cJSON_Delete|zero,null,empty_str|none",
+        "text_hash": "31a32f6167c605e44db17c5a4d89e28be5e0edcd85d0894761848b7048fddc40"
+      }
+    ]
+  }
+}
