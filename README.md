@@ -141,6 +141,6 @@ working runtime state.
 
 This repository is distributed under CC BY 4.0. See `LICENSE`.
 
-Because this project is a heavily modified derivative of the upstream
+Because this project is a modified derivative of the upstream
 TitanFuzz artifact, please preserve attribution to both the original TitanFuzz
 artifact and this CTitanFuzz repository when redistributing derived work.
