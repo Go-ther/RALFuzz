@@ -1,3 +1,6 @@
+CTitanFuzz
+Copyright (c) 2026 Gother
+
 This repository, CTitanFuzz, is a heavily modified derivative of the
 TitanFuzz artifact released on Zenodo:
 
@@ -5,7 +8,7 @@ TitanFuzz artifact released on Zenodo:
 Fuzzing Deep-Learning Libraries via Large Language Models'"
 Published on May 28, 2023, Version v1
 Zenodo record: https://zenodo.org/records/7978832
-DOI: https://doi.org/10.1145/3597926.3598067
+Associated paper DOI: https://doi.org/10.1145/3597926.3598067
 
 Original authors/creators listed on the Zenodo record:
 - Yinlin Deng
@@ -22,6 +25,10 @@ This repository includes substantial modifications, extensions, and
 reorganization relative to the upstream artifact. Any errors, omissions, or
 changes in behavior in this derivative repository are the responsibility of
 this repository's maintainers, not the original authors.
+
+CTitanFuzz is an independent research prototype and is not an official
+extension of, nor affiliated with, the original TitanFuzz project or its
+authors.
 
 When reusing this repository, please preserve attribution to both:
 - the original TitanFuzz artifact and its authors
