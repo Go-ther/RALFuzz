@@ -82,7 +82,7 @@ def likely_truncated_c_code(code: str) -> bool:
 
 
 def should_retry_generation_for_truncation(raw_completion: str, val: SeedValidation) -> bool:
-    if val.reason not in {"compile_failed", "syntax_fix_failed"}:
+    if val.reason not in {"compile_failed", "syntax_fix_failed", "generation_empty"}:
         return False
     if "WinMain" in val.compile_msg:
         return True
@@ -278,7 +278,10 @@ def validate_seed(
     risk_relevance_policy: str,
     enforce_init_target_order: bool,
 ) -> SeedValidation:
-    prepared = maybe_wrap_main(ensure_header(extract_code_from_llm_output(raw_code), spec.header), auto_wrap_main)
+    extracted = extract_code_from_llm_output(raw_code)
+    if not extracted.strip():
+        return SeedValidation(valid=False, reason="generation_empty", syntax_fixed_code="")
+    prepared = maybe_wrap_main(ensure_header(extracted, spec.header), auto_wrap_main)
     fixed = syntax_fix_remove_last_line(prepared, compiler, c_standard, cflags, compile_timeout, spec.api_name)
     if not fixed:
         return SeedValidation(valid=False, reason="syntax_fix_failed", syntax_fixed_code="")

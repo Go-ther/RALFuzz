@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from ctitanfuzz.c_mutators import SnippetInfill
-from ctitanfuzz.util.util import load_apis, normalize_code
+from mutation.c_mutators import SnippetInfill
+from mutation.util.util import load_apis, normalize_code
 
 
 def strip_markdown_fences(code: str) -> str:

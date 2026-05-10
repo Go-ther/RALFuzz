@@ -36,8 +36,8 @@ def join_multiline_statements(text: str) -> List[str]:
 
 
 def parse_cjson_public(stmt: str) -> Tuple[str, str] | None:
-    m = re.match(
-        r"^CJSON_PUBLIC\(([^)]*)\)\s*([A-Za-z_]\w*)\s*\((.*)\)\s*;\s*$",
+    m = re.search(
+        r"(?:^|\s)CJSON_PUBLIC\(([^)]*)\)\s*([A-Za-z_]\w*)\s*\((.*)\)\s*;\s*$",
         stmt,
     )
     if not m:
@@ -239,4 +239,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-

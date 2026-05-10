@@ -1,2 +1,1 @@
-"""TitanFuzz-style C library fuzzing package."""
-
+"""RALFuzz C library fuzzing package."""

@@ -8,6 +8,11 @@ import subprocess
 import sys
 from pathlib import Path
 
+if __package__ in {None, ""}:
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from mutation.toolchain_env import configure_clang_environment, default_coverage_tool, normalize_clang_compiler
+
 
 EXCLUDED_DIR_PARTS = {
     ".git",
@@ -41,7 +46,7 @@ def parse_args() -> argparse.Namespace:
     repo_root = Path(__file__).resolve().parent.parent
     default_runtime_root = repo_root / "runtime_data"
     parser = argparse.ArgumentParser(
-        description="Run the end-to-end CTitanFuzz pipeline: seed generation followed by mutation fuzzing."
+        description="Run the end-to-end RALFuzz pipeline: seed generation followed by mutation fuzzing."
     )
     parser.add_argument("--runtime-root", default=str(default_runtime_root))
     parser.add_argument("--api-dir", required=True, help="Single target C library directory used by both stages.")
@@ -55,8 +60,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--auto-style", choices=["auto", "cjson", "generic"], default="auto")
     parser.add_argument("--library-name", default=None)
     parser.add_argument("--library-version", default="unknown")
-    parser.add_argument("--compiler", default="gcc")
-    parser.add_argument("--gcov", default="gcov")
+    parser.add_argument("--compiler", default="clang")
+    parser.add_argument("--coverage-tool", default=default_coverage_tool())
     parser.add_argument("--extra-cflags", default="")
     parser.add_argument("--extra-ldflags", default="")
     parser.add_argument("--enable-sanitizer", action="store_true", default=False)
@@ -67,6 +72,8 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--seed-model", default="deepseek-v3.2:cloud")
     parser.add_argument("--seed-endpoint-mode", choices=["auto", "chat", "completion", "ollama"], default="ollama")
     parser.add_argument("--seed-request-timeout", type=int, default=120)
+    parser.add_argument("--seed-network-retries", type=int, default=2)
+    parser.add_argument("--seed-network-retry-backoff-sec", type=float, default=2.0)
     parser.add_argument("--seed-samples-per-api", type=int, default=12)
     parser.add_argument("--seed-target-valid-per-api", type=int, default=8)
     parser.add_argument("--seed-temperature", type=float, default=0.35)
@@ -188,7 +195,15 @@ def reset_runtime_dirs(runtime_root: Path, names: tuple[str, ...]) -> None:
             shutil.rmtree(target, ignore_errors=True)
 
 
-def build_env(repo_root: Path, runtime_root: Path, create_dirs: bool = True) -> dict[str, str]:
+def build_env(
+    repo_root: Path,
+    runtime_root: Path,
+    *,
+    create_dirs: bool = True,
+    compiler: str | None = None,
+    enable_sanitizer: bool = False,
+    require_clang: bool = True,
+) -> dict[str, str]:
     env = os.environ.copy()
     pythonpath_entries = [str(repo_root)]
     if env.get("PYTHONPATH"):
@@ -204,11 +219,17 @@ def build_env(repo_root: Path, runtime_root: Path, create_dirs: bool = True) -> 
         build_root.mkdir(parents=True, exist_ok=True)
         temp_root.mkdir(parents=True, exist_ok=True)
 
-    env["CTITANFUZZ_CACHE_ROOT"] = str(metadata_root)
-    env["CTITANFUZZ_BUILD_ROOT"] = str(build_root)
+    env["RALFUZZ_CACHE_ROOT"] = str(metadata_root)
+    env["RALFUZZ_BUILD_ROOT"] = str(build_root)
     env["TMP"] = str(temp_root)
     env["TEMP"] = str(temp_root)
     env["TMPDIR"] = str(temp_root)
+    configure_clang_environment(
+        compiler=compiler,
+        enable_sanitizer=enable_sanitizer,
+        env=env,
+        require_clang=require_clang,
+    )
     return env
 
 
@@ -227,6 +248,7 @@ def run_command(label: str, cmd: list[str], cwd: Path, env: dict[str, str], dry_
 
 def main() -> int:
     args = parse_args()
+    args.compiler = normalize_clang_compiler(args.compiler, source="pipeline --compiler")
     repo_root = Path(__file__).resolve().parent.parent
     seed_generation_dir = repo_root / "seed_generation"
     api_dir = Path(args.api_dir).resolve()
@@ -248,7 +270,14 @@ def main() -> int:
             reset_targets.append("mutation")
         reset_runtime_dirs(runtime_root, tuple(reset_targets))
 
-    env = build_env(repo_root, runtime_root, create_dirs=not args.dry_run)
+    env = build_env(
+        repo_root,
+        runtime_root,
+        create_dirs=not args.dry_run,
+        compiler=args.compiler,
+        enable_sanitizer=args.enable_sanitizer,
+        require_clang=not args.dry_run,
+    )
 
     include_dirs = discover_include_dirs(api_dir)
     link_sources = discover_link_sources(api_dir)
@@ -261,6 +290,10 @@ def main() -> int:
     ldflag_tokens = [str(path) for path in link_sources]
     if args.extra_ldflags.strip():
         ldflag_tokens.append(args.extra_ldflags.strip())
+    if args.enable_sanitizer:
+        sanitizer_flags = ["-fsanitize=address", "-fsanitize=undefined"]
+        cflag_tokens.extend(sanitizer_flags)
+        ldflag_tokens.extend(sanitizer_flags)
     cflags = join_flag_tokens(cflag_tokens)
     ldflags = join_flag_tokens(ldflag_tokens)
 
@@ -290,6 +323,10 @@ def main() -> int:
             args.seed_endpoint_mode,
             "--request-timeout",
             str(args.seed_request_timeout),
+            "--network-retries",
+            str(args.seed_network_retries),
+            "--network-retry-backoff-sec",
+            str(args.seed_network_retry_backoff_sec),
             "--library-name",
             library_name,
             "--library-version",
@@ -385,7 +422,7 @@ def main() -> int:
         mutation_cmd = [
             sys.executable,
             "-m",
-            "ctitanfuzz.ev_generation",
+            "mutation.ev_generation",
             "--llm_provider",
             args.mutation_llm_provider,
             "--target",
@@ -418,11 +455,11 @@ def main() -> int:
             args.mutation_mutator_selection_algo,
             "--compiler",
             args.compiler,
-            "--gcov",
-            args.gcov,
-            "--compile_timeout",
+            "--coverage-tool",
+            args.coverage_tool,
+            "--compile-timeout",
             str(args.mutation_compile_timeout),
-            "--test_timeout",
+            "--test-timeout",
             str(args.mutation_test_timeout),
             "--llm_request_timeout",
             str(args.mutation_request_timeout),
@@ -434,7 +471,7 @@ def main() -> int:
             str(args.mutation_max_stagnation_rounds),
         ]
         if args.enable_sanitizer:
-            mutation_cmd.append("--enable_sanitizer")
+            mutation_cmd.append("--enable-sanitizer")
         if args.mutation_llm_provider != "mock":
             mutation_cmd.extend(["--model_name", args.mutation_model])
         if args.mutation_llm_provider in {"openai_compatible", "deepseek"}:

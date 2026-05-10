@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from ctitanfuzz.c_mutators import (
+from mutation.c_mutators import (
     DepthFinder,
     SnippetInfill,
     SnippetInfillArbitraryAPI,

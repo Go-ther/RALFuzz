@@ -9,7 +9,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Iterable
 
-from ctitanfuzz.c_mutators import find_call_spans
+from mutation.c_mutators import find_call_spans
 
 
 EXCLUDED_DIR_PARTS = {
@@ -47,6 +47,7 @@ STRING_HINTS = ("string", "str", "text", "json", "buf", "buffer", "data", "raw",
 LENGTH_HINTS = ("len", "length", "size", "count", "idx", "index", "offset", "capacity")
 INTEGER_TYPE_HINTS = ("int", "size_t", "long", "short", "ssize_t", "ptrdiff_t", "uint", "int32", "int64")
 MEMORY_FUNCTION_HINTS = ("malloc", "calloc", "realloc", "free", "memcpy", "memmove", "strcpy", "strncpy")
+NON_RESOURCE_POINTER_BASES = {"char", "void", "uint8_t", "int8_t", "byte"}
 
 
 @dataclass
@@ -415,7 +416,7 @@ def _discover_include_dirs(target_root: Path, headers: Iterable[Path], manifest:
 
 
 def _load_manifest(target_root: Path) -> dict[str, object]:
-    for name in ("ctitanfuzz.target.json", "ctitanfuzz_target.json"):
+    for name in ("ralfuzz.target.json", "ralfuzz_target.json"):
         path = target_root / name
         if path.exists():
             return json.loads(path.read_text(encoding="utf-8"))
@@ -596,6 +597,19 @@ def _base_type(type_decl: str) -> str:
     if not tokens:
         return ""
     return tokens[-1]
+
+
+def _is_pointer_type(type_decl: str) -> bool:
+    return "*" in type_decl or bool(re.search(r"\[[^\]]*\]", type_decl))
+
+
+def _is_const_type(type_decl: str) -> bool:
+    return bool(re.search(r"\bconst\b", type_decl))
+
+
+def _looks_accessor_api(name: str) -> bool:
+    lower = (name or "").lower()
+    return lower.startswith(("get", "set", "has", "is")) or "_get" in lower or "_set" in lower or "errorptr" in lower
 
 
 def _extract_version(target_root: Path) -> str:
@@ -781,13 +795,29 @@ def _build_call_graph_entries(
                 if builder != api_name:
                     init_paths.append("{}(...)".format(builder))
         cleanup_paths: list[str] = []
-        cleanup_targets = arg_base_types[:]
-        if _base_type(spec.ret):
-            cleanup_targets.append(_base_type(spec.ret))
-        for base_type in cleanup_targets:
-            for cleanup_api in cleanup_builders.get(base_type, []) + cleanup_builders.get("void", []):
-                if cleanup_api != api_name:
-                    cleanup_paths.append("{}(...)".format(cleanup_api))
+        if not any(hint in api_name.lower() for hint in CLEANUP_HINTS):
+            ret_base = _base_type(spec.ret)
+            if ret_base and _is_pointer_type(spec.ret) and not _looks_accessor_api(api_name):
+                exact_ret_cleanup = cleanup_builders.get(ret_base, [])
+                ret_cleanup = exact_ret_cleanup
+                if (not ret_cleanup) and (not _is_const_type(spec.ret)):
+                    ret_cleanup = cleanup_builders.get("void", [])
+                for cleanup_api in ret_cleanup:
+                    if cleanup_api != api_name:
+                        cleanup_paths.append("{}(...)".format(cleanup_api))
+
+            resource_arg_bases = [
+                base_type
+                for arg_type, base_type in zip(spec.arg_types, arg_base_types)
+                if _is_pointer_type(arg_type)
+                and base_type
+                and base_type not in NON_RESOURCE_POINTER_BASES
+                and init_builders.get(base_type)
+            ]
+            for base_type in resource_arg_bases:
+                for cleanup_api in cleanup_builders.get(base_type, []):
+                    if cleanup_api != api_name:
+                        cleanup_paths.append("{}(...)".format(cleanup_api))
         entries[api_name] = CallGraphEntry(
             api=api_name,
             callers=callers,
@@ -872,7 +902,7 @@ def build_library_metadata(
 
     root_hash = hashlib.sha1(str(target_root).encode("utf-8")).hexdigest()[:10]
     cache_name = "{}_{}".format(re.sub(r"[^A-Za-z0-9_]+", "_", target_root.name) or "target", root_hash)
-    cache_root_override = os.environ.get("CTITANFUZZ_CACHE_ROOT", "").strip()
+    cache_root_override = os.environ.get("RALFUZZ_CACHE_ROOT", "").strip()
     if cache_root_override:
         cache_dir = Path(cache_root_override).resolve() / "targets" / cache_name
     else:

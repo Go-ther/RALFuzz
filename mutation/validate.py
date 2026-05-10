@@ -3,8 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from ctitanfuzz.toolchain import compile_testcase, run_compiled_binary
-from ctitanfuzz.util.util import ExecutionStatus, cleanup_dir
+from mutation.toolchain import compile_testcase, run_compiled_binary
+from mutation.util.util import ExecutionStatus, cleanup_dir
 
 
 @dataclass
@@ -22,8 +22,8 @@ def validate_testcase(
     code: str,
     target_adapter,
     target_root: str | Path,
-    compiler: str = "gcc",
-    build_root: str | Path = "ctitanfuzz/.build",
+    compiler: str = "clang",
+    build_root: str | Path = "mutation/.build",
     compile_timeout: int = 20,
     test_timeout: int = 10,
     enable_sanitizer: bool = False,
@@ -82,8 +82,8 @@ def validate_status(
     code: str,
     target_adapter,
     target_root: str | Path,
-    compiler: str = "gcc",
-    build_root: str | Path = "ctitanfuzz/.build",
+    compiler: str = "clang",
+    build_root: str | Path = "mutation/.build",
     compile_timeout: int = 20,
     test_timeout: int = 10,
     enable_sanitizer: bool = False,

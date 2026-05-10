@@ -1,7 +1,8 @@
+﻿/*
 Library: cJSON (version: unknown)
 Target: cJSON * cJSON_Parse(const char *value);
 Header: <cJSON.h>
-Exec: init=cJSON_ParseWithOpts, cJSON_ParseWithLength; cleanup=cJSON_free, cJSON_Delete; neighbors=cJSON_ParseWithOpts, cJSON_ParseWithLength, cJSON_ParseWithLengthOpts; chain=cJSON_ParseWithOpts -> cJSON_ParseWithLength -> cJSON_Parse -> cJSON_free
+Exec: init=(none); cleanup=cJSON_Delete; neighbors=cJSON_ParseWithOpts, cJSON_ParseWithLength, cJSON_ParseWithLengthOpts; chain=cJSON_Parse -> cJSON_Delete
 
 Write one standalone C11 harness:
 - include -> init if needed -> build short input -> call `cJSON_Parse` -> cleanup if needed -> print status
@@ -10,3 +11,7 @@ Write one standalone C11 harness:
 - prefer concise code, at most one helper function
 - avoid long comments, markdown fences, and giant buffers
 - output code only
+*/
+
+/* Lifecycle note: because cleanup is listed, make sure at least one executed path calls `cJSON_Delete` after `cJSON_Parse`. */
+

@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from ctitanfuzz.metadata import ApiSpec, build_library_metadata, render_seed_context
-from ctitanfuzz.seed_builder import build_auto_seed_corpus
-from ctitanfuzz.targets.base import TargetAdapter
+from mutation.metadata import ApiSpec, build_library_metadata, render_seed_context
+from mutation.seed_builder import build_auto_seed_corpus
+from mutation.targets.base import TargetAdapter
 
 
 class GenericCTargetAdapter(TargetAdapter):
@@ -108,7 +108,8 @@ class GenericCTargetAdapter(TargetAdapter):
         guidance = (
             "Task 6: preserve init and cleanup correctness while keeping the target API call.\n"
             "Task 7: prefer 1-2 boundary cases from the risk hints.\n"
-            "Task 8: if high-risk neighbor APIs exist, prefer adding one compilable helper call or a short chain around the target API.\n"
+            "Task 8: if high-risk neighbor APIs exist, you may add one short neighbor call when it fits naturally; prefer an executed call from main or from a helper that main invokes, but skip it rather than forcing an awkward chain.\n"
+            "Task 9: do not duplicate includes, do not leave unused helpers, do not copy RALFUZZ prompt comments into the final code, and do not call delete/free twice on the same pointer.\n"
             "Context:\n"
             + render_seed_context(seed_context)
         )

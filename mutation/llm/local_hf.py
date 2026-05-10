@@ -6,7 +6,7 @@ import time
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer, T5ForConditionalGeneration
 
-from ctitanfuzz.llm.base import BaseLLM
+from mutation.llm.base import BaseLLM
 
 
 class LocalHuggingFaceLLM(BaseLLM):

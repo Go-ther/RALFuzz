@@ -6,16 +6,16 @@ import os
 def create_llm_client(args, target_adapter):
     provider = getattr(args, "llm_provider", "mock")
     if provider == "mock":
-        from ctitanfuzz.llm.mock import MockInfillLLM
+        from mutation.llm.mock import MockInfillLLM
 
         return MockInfillLLM(target_adapter)
     if provider == "local_hf":
-        from ctitanfuzz.llm.local_hf import LocalHuggingFaceLLM
+        from mutation.llm.local_hf import LocalHuggingFaceLLM
 
         model_name = args.model_name or "facebook/incoder-1B"
         return LocalHuggingFaceLLM(model_name, batch_size=args.batch_size)
     if provider == "deepseek":
-        from ctitanfuzz.llm.openai_compatible import DeepSeekInfillLLM
+        from mutation.llm.openai_compatible import DeepSeekInfillLLM
 
         model_name = args.model_name or "deepseek-chat"
         return DeepSeekInfillLLM(
@@ -27,7 +27,7 @@ def create_llm_client(args, target_adapter):
             temperature=args.llm_temperature,
         )
     if provider == "openai_compatible":
-        from ctitanfuzz.llm.openai_compatible import OpenAICompatibleInfillLLM
+        from mutation.llm.openai_compatible import OpenAICompatibleInfillLLM
 
         api_key = args.llm_api_key or os.environ.get("LLM_API_KEY", "")
         if not api_key:

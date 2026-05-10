@@ -33,6 +33,10 @@ def build_risk_constraint_lines(spec: ApiSpec, risk_context: RiskContext, min_ma
     lines: List[str] = [
         f"- Include at least {min_k} short risk probes from: {marker_targets}.",
         "- Keep the program concise: at most one helper, short inputs, no long comments.",
+        "- If you test deep nesting, keep it small and explicit; do not generate giant nested literals.",
+        f"- Use exactly this header include: `#include \"{spec.header}\"`; do not rewrite the include path or casing.",
+        "- Every include, string literal, and character literal must be valid C11 syntax.",
+        "- If testing binary/hex payloads, do not use `\\x` escapes inside C string literals when hex digits follow; prefer short byte arrays or safe short literals.",
         "- Do not generate only happy-path inputs; print at least one status/result.",
     ]
     if require_boundary_value:
@@ -78,6 +82,11 @@ def build_prompt(
     low = rendered.lower()
     if "markdown" not in low and "code fence" not in low:
         rendered += "\n/* Output plain C source only. Do not use markdown code fences. */\n"
+    if execution_context.cleanup_path:
+        rendered += (
+            "\n/* Lifecycle note: because cleanup is listed, make sure at least one executed path "
+            f"calls `{execution_context.cleanup_path[0]}` after `{spec.api_name}`. */\n"
+        )
     if include_risk_card and risk_prompt_hardening:
         risk_lines = build_risk_constraint_lines(
             spec,
@@ -135,6 +144,9 @@ def build_truncation_retry_prompt(
         f"- Keep the full program within about {max(40, int(max_lines))} lines.",
         "- Use at most one helper function and avoid long comments.",
         "- Keep each test input short; avoid huge string literals.",
+        f"- Use exactly this header include: `#include \"{spec.header}\"`; do not rewrite the include path or casing.",
+        "- Every include, string literal, and character literal must be valid C11 syntax.",
+        "- If testing binary/hex payloads, do not use `\\x` escapes inside C string literals when hex digits follow; prefer short byte arrays or safe short literals.",
         "- Ensure all quotes, braces, and parentheses are fully closed.",
         "- End with a complete `return 0;` and final closing brace.",
     ]

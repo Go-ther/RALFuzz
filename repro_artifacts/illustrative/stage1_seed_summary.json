@@ -1,9 +1,9 @@
 {
   "api": "cJSON_Parse",
   "source_files": {
-    "summary_json": "E:\\paper\\ctitanfuzz\\runtime_data\\illustrative_cjson_parse_v1\\seed_generation\\summary.json",
-    "outputs_json": "E:\\paper\\ctitanfuzz\\runtime_data\\illustrative_cjson_parse_v1\\seed_generation\\outputs.json",
-    "seed_bank_json": "E:\\paper\\ctitanfuzz\\runtime_data\\illustrative_cjson_parse_v1\\seed_generation\\seed_bank.json"
+    "summary_json": "E:\\paper\\RALFuzz\\runtime_data\\illustrative_cjson_parse_v1\\seed_generation\\summary.json",
+    "outputs_json": "E:\\paper\\RALFuzz\\runtime_data\\illustrative_cjson_parse_v1\\seed_generation\\outputs.json",
+    "seed_bank_json": "E:\\paper\\RALFuzz\\runtime_data\\illustrative_cjson_parse_v1\\seed_generation\\seed_bank.json"
   },
   "summary": {
     "total_apis_loaded": 1,
@@ -18,21 +18,21 @@
     "init_path_hit_rate": 0.0,
     "cleanup_path_hit_rate": 1.0,
     "aligned_risk_relevance_rate": 1.0,
-    "raw_risk_marker_rate": 0.6666666666666666,
+    "raw_risk_marker_rate": 1.0,
     "risk_relevance_rate": 1.0,
     "runtime_hit_observation_rate": 1.0,
-    "avg_aligned_risk_score": 0.6000000000000001,
+    "avg_aligned_risk_score": 0.6,
     "token_usage": {
       "available": true,
-      "prompt_tokens": 2052,
-      "completion_tokens": 1307,
-      "total_tokens": 3359
+      "prompt_tokens": 2880,
+      "completion_tokens": 1757,
+      "total_tokens": 4637
     },
-    "elapsed_sec": 268.5443949699402,
+    "elapsed_sec": 42.002750873565674,
     "args": {
       "api_spec_file": null,
       "auto_api_dir": [
-        "E:\\paper\\ctitanfuzz\\mutation\\api\\cJSON"
+        "E:\\paper\\RALFuzz\\api\\cJSON"
       ],
       "auto_header_glob": [],
       "auto_exclude_header_glob": [],
@@ -40,17 +40,17 @@
       "auto_api_name_regex": "^cJSON_Parse$",
       "auto_non_recursive": false,
       "auto_sort": false,
-      "output_dir": "E:\\paper\\ctitanfuzz\\runtime_data\\illustrative_cjson_parse_v1\\seed_generation",
-      "base_url": "http://localhost:11434",
-      "api_key": "ollama",
-      "model": "qwen3-coder:480b-cloud",
-      "endpoint_mode": "ollama",
+      "output_dir": "E:\\paper\\RALFuzz\\runtime_data\\illustrative_cjson_parse_v1\\seed_generation",
+      "base_url": "https://api.deepseek.com",
+      "api_key": "***redacted***",
+      "model": "deepseek-v4-flash",
+      "endpoint_mode": "chat",
       "single_shot_delay_ms": 0,
       "library_name": "cJSON",
       "library_version": "unknown",
       "default_header": "stdio.h",
       "doc_url_template": null,
-      "prompt_template_file": "E:\\paper\\ctitanfuzz\\seed_generation\\templates\\prompt_steps_c.txt",
+      "prompt_template_file": "E:\\paper\\RALFuzz\\seed_generation\\templates\\prompt_steps_c.txt",
       "samples_per_api": 8,
       "target_valid_per_api": 6,
       "temperature": 0.35,
@@ -65,18 +65,20 @@
       "truncation_retry_require_boundary_value": true,
       "truncation_retry_require_high_risk_neighbor": false,
       "request_timeout": 120,
+      "network_retries": 2,
+      "network_retry_backoff_sec": 2.0,
       "crawl_timeout": 20,
-      "compiler": "gcc",
+      "compiler": "clang",
       "c_standard": "c11",
-      "cflags": "-IE:\\paper\\ctitanfuzz\\mutation\\api\\cJSON",
-      "ldflags": "E:\\paper\\ctitanfuzz\\mutation\\api\\cJSON\\cJSON.c E:\\paper\\ctitanfuzz\\mutation\\api\\cJSON\\cJSON_Utils.c",
+      "cflags": "-IE:\\paper\\RALFuzz\\api\\cJSON -fsanitize=address -fsanitize=undefined",
+      "ldflags": "E:\\paper\\RALFuzz\\api\\cJSON\\cJSON.c E:\\paper\\RALFuzz\\api\\cJSON\\cJSON_Utils.c -fsanitize=address -fsanitize=undefined",
       "compile_timeout": 15,
       "run_timeout": 3,
       "skip_run_validation": false,
       "overwrite_existing": true,
       "auto_wrap_main": true,
       "source_dir": [
-        "E:\\paper\\ctitanfuzz\\mutation\\api\\cJSON"
+        "E:\\paper\\RALFuzz\\api\\cJSON"
       ],
       "source_file_pattern": [
         "*.c"
@@ -113,12 +115,12 @@
     "target_valid_per_api": 6,
     "validation_passed_count": 6,
     "valid_count": 6,
-    "g_time_sec": 268.52377128601074,
+    "g_time_sec": 41.980116844177246,
     "token_usage": {
       "available": true,
-      "prompt_tokens": 2052,
-      "completion_tokens": 1307,
-      "total_tokens": 3359
+      "prompt_tokens": 2880,
+      "completion_tokens": 1757,
+      "total_tokens": 4637
     },
     "quality_metrics": {
       "compile_ok_count": 6,
@@ -127,7 +129,7 @@
       "init_hit_count": 0,
       "cleanup_hit_count": 6,
       "risk_hit_count": 6,
-      "raw_risk_hit_count": 4,
+      "raw_risk_hit_count": 6,
       "runtime_hits_observed_count": 6,
       "compile_rate": 1.0,
       "run_rate": 1.0,
@@ -135,14 +137,14 @@
       "init_path_hit_rate": 0.0,
       "cleanup_path_hit_rate": 1.0,
       "aligned_risk_relevance_rate": 1.0,
-      "raw_risk_marker_rate": 0.6666666666666666,
+      "raw_risk_marker_rate": 1.0,
       "risk_relevance_rate": 1.0,
       "runtime_hit_observation_rate": 1.0,
-      "avg_aligned_risk_score": 0.6000000000000001,
-      "avg_call_chain_length": 10.833333333333334,
+      "avg_aligned_risk_score": 0.6,
+      "avg_call_chain_length": 13.333333333333334,
       "unique_valid_seed_count": 6
     },
-    "endpoint_used": "ollama"
+    "endpoint_used": "chat"
   },
   "record_reason_counts": {
     "ok": 6
@@ -154,15 +156,9 @@
     "target_api": "cJSON_Parse",
     "api_signature": "cJSON * cJSON_Parse(const char *value);",
     "execution_context": {
-      "init_path": [
-        "cJSON_ParseWithOpts",
-        "cJSON_ParseWithLength",
-        "cJSON_ParseWithLengthOpts"
-      ],
+      "init_path": [],
       "cleanup_path": [
-        "cJSON_free",
-        "cJSON_Delete",
-        "cJSON_DeleteItemFromArray"
+        "cJSON_Delete"
       ],
       "neighbor_apis": [
         "cJSON_ParseWithOpts",
@@ -173,12 +169,10 @@
         "cJSON_Delete"
       ],
       "short_call_chain_template": [
-        "cJSON_ParseWithOpts",
-        "cJSON_ParseWithLength",
         "cJSON_Parse",
-        "cJSON_free"
+        "cJSON_Delete"
       ],
-      "source_files_scanned": 76
+      "source_files_scanned": 2
     },
     "risk_context": {
       "risk_level": "medium",
@@ -207,44 +201,44 @@
       {
         "seed_id": 1,
         "from_completion_id": 1,
-        "file": "E:\\paper\\ctitanfuzz\\runtime_data\\illustrative_cjson_parse_v1\\seed_generation\\fix\\cJSON_Parse\\1.c",
-        "skeleton_key": "cJSON_Parse|none|cJSON_Delete|cJSON_Delete|zero,one,empty_str|deep-structure",
-        "text_hash": "ba5e4fd92e68b12c928b9adad34ffc600dedc631242aea27635b428571f9c402"
+        "file": "E:\\paper\\RALFuzz\\runtime_data\\illustrative_cjson_parse_v1\\seed_generation\\fix\\cJSON_Parse\\1.c",
+        "skeleton_key": "cJSON_Parse|none|cJSON_Delete|cJSON_Delete|zero,one,null,empty_str,int_min|deep-structure",
+        "text_hash": "6b79840a30b556b16275f6c53c05e690c4ffe9887eaa759a097b13a37da4f693"
       },
       {
         "seed_id": 2,
         "from_completion_id": 2,
-        "file": "E:\\paper\\ctitanfuzz\\runtime_data\\illustrative_cjson_parse_v1\\seed_generation\\fix\\cJSON_Parse\\2.c",
-        "skeleton_key": "cJSON_Parse|none|cJSON_Delete|cJSON_Delete|zero,null,empty_str|malformed-input,binary-payload,deep-structure",
-        "text_hash": "0f223a90a94b2edfc9c328c52c7fb495b26739cc6cd9b44064fadb2711aa5b02"
+        "file": "E:\\paper\\RALFuzz\\runtime_data\\illustrative_cjson_parse_v1\\seed_generation\\fix\\cJSON_Parse\\2.c",
+        "skeleton_key": "cJSON_Parse|none|cJSON_Delete|cJSON_Delete|zero,one,minus_one,null,empty_str|numeric-extreme,binary-payload,deep-structure",
+        "text_hash": "7f9a58d63f5ea1c8f94ed784fb5ba29cd72614bdb6ae149a2a5cf8aa38eada63"
       },
       {
         "seed_id": 3,
         "from_completion_id": 3,
-        "file": "E:\\paper\\ctitanfuzz\\runtime_data\\illustrative_cjson_parse_v1\\seed_generation\\fix\\cJSON_Parse\\3.c",
-        "skeleton_key": "cJSON_Parse|none|cJSON_Delete|cJSON_Delete|zero,null,empty_str|none",
-        "text_hash": "b582c9549e253ba1aaab35d9dff2905f613523e66ad9921cf75353c532cee1f7"
+        "file": "E:\\paper\\RALFuzz\\runtime_data\\illustrative_cjson_parse_v1\\seed_generation\\fix\\cJSON_Parse\\3.c",
+        "skeleton_key": "cJSON_Parse|none|cJSON_Delete|cJSON_Delete|zero,one,null,empty_str,int_max,int_min|numeric-extreme,malformed-input,binary-payload,deep-structure",
+        "text_hash": "f3442357af060cac2d671ee67034e80572451a21e398dba755ecdceecba17c78"
       },
       {
         "seed_id": 4,
         "from_completion_id": 4,
-        "file": "E:\\paper\\ctitanfuzz\\runtime_data\\illustrative_cjson_parse_v1\\seed_generation\\fix\\cJSON_Parse\\4.c",
-        "skeleton_key": "cJSON_Parse|none|cJSON_Delete|cJSON_Delete|zero,one,null,empty_str|malformed-input,deep-structure",
-        "text_hash": "453c645621074a54fd49f7c06b3b902a75fb8f3fc72c321c6b9bc8eeedb88d1c"
+        "file": "E:\\paper\\RALFuzz\\runtime_data\\illustrative_cjson_parse_v1\\seed_generation\\fix\\cJSON_Parse\\4.c",
+        "skeleton_key": "cJSON_Parse|none|cJSON_Delete|cJSON_Delete|zero,one,null,empty_str,int_max|binary-payload,deep-structure",
+        "text_hash": "077def592afb312baac9e9f7dd4869f6a56bf481b479c1dc0224dd1b7ba78556"
       },
       {
         "seed_id": 5,
         "from_completion_id": 5,
-        "file": "E:\\paper\\ctitanfuzz\\runtime_data\\illustrative_cjson_parse_v1\\seed_generation\\fix\\cJSON_Parse\\5.c",
-        "skeleton_key": "cJSON_Parse|none|cJSON_Delete|cJSON_Delete|zero,null,empty_str|deep-structure",
-        "text_hash": "0e0bc7b3e53219a2920b0bdaf083de3dfab69b8576c78bc8273a93789f0eb8f0"
+        "file": "E:\\paper\\RALFuzz\\runtime_data\\illustrative_cjson_parse_v1\\seed_generation\\fix\\cJSON_Parse\\5.c",
+        "skeleton_key": "cJSON_Parse|none|cJSON_Delete|cJSON_Delete|zero,one,null,empty_str,int_max|deep-structure",
+        "text_hash": "ca8a0940a242abcb8d0ab87172b0dd341944ce61c6e40d733051034c870d1555"
       },
       {
         "seed_id": 6,
         "from_completion_id": 6,
-        "file": "E:\\paper\\ctitanfuzz\\runtime_data\\illustrative_cjson_parse_v1\\seed_generation\\fix\\cJSON_Parse\\6.c",
-        "skeleton_key": "cJSON_Parse|none|cJSON_Delete|cJSON_Delete|zero,null,empty_str|none",
-        "text_hash": "31a32f6167c605e44db17c5a4d89e28be5e0edcd85d0894761848b7048fddc40"
+        "file": "E:\\paper\\RALFuzz\\runtime_data\\illustrative_cjson_parse_v1\\seed_generation\\fix\\cJSON_Parse\\6.c",
+        "skeleton_key": "cJSON_Parse|none|cJSON_Delete|cJSON_Delete|zero,one,null,empty_str,int_max|binary-payload,deep-structure",
+        "text_hash": "51f6301113ef26120075b374542e29233b3b495ce3d02b92d5de212135f922fd"
       }
     ]
   }

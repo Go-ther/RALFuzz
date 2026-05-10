@@ -6,6 +6,7 @@ import re
 import shlex
 import subprocess
 from collections import defaultdict
+from dataclasses import dataclass
 from typing import Dict, Iterable, List, Sequence, Set, Tuple
 
 from seed_types import ApiSpec, ExecutionContext
@@ -14,6 +15,31 @@ CONTROL_KEYWORDS: Set[str] = {"if", "for", "while", "switch", "return", "sizeof"
 INIT_HINTS: Tuple[str, ...] = ("init", "create", "open", "alloc", "new", "setup", "begin", "parse", "build", "make", "start")
 CLEANUP_HINTS: Tuple[str, ...] = ("cleanup", "free", "destroy", "close", "release", "delete", "deinit", "fini", "end", "dispose")
 LINE_MARKER_RE = re.compile(r'^\s*#\s*(?:line\s+)?\d+\s+"([^"]+)"')
+NON_RESOURCE_POINTER_BASES: Set[str] = {"char", "void", "uint8_t", "int8_t", "byte"}
+TYPE_QUALIFIERS: Set[str] = {
+    "const",
+    "volatile",
+    "restrict",
+    "struct",
+    "enum",
+    "union",
+    "unsigned",
+    "signed",
+    "long",
+    "short",
+}
+
+
+@dataclass(frozen=True)
+class ParsedSignature:
+    name: str
+    ret_type: str
+    ret_base: str
+    ret_is_pointer: bool
+    ret_is_const: bool
+    arg_types: List[str]
+    arg_bases: List[str]
+    arg_is_pointer: List[bool]
 
 
 def strip_c_comments(text: str) -> str:
@@ -199,6 +225,230 @@ def looks_cleanup(name: str) -> bool:
     return any(k in lower for k in CLEANUP_HINTS)
 
 
+def _collapse_ws(text: str) -> str:
+    return " ".join((text or "").split())
+
+
+def _split_top_level_commas(text: str) -> List[str]:
+    parts: List[str] = []
+    current: List[str] = []
+    depth_paren = 0
+    depth_bracket = 0
+    in_string: str | None = None
+    escape = False
+    for char in text:
+        current.append(char)
+        if in_string is not None:
+            if escape:
+                escape = False
+            elif char == "\\":
+                escape = True
+            elif char == in_string:
+                in_string = None
+            continue
+        if char in ("'", '"'):
+            in_string = char
+            continue
+        if char == "(":
+            depth_paren += 1
+        elif char == ")":
+            depth_paren = max(0, depth_paren - 1)
+        elif char == "[":
+            depth_bracket += 1
+        elif char == "]":
+            depth_bracket = max(0, depth_bracket - 1)
+        elif char == "," and depth_paren == 0 and depth_bracket == 0:
+            parts.append("".join(current[:-1]).strip())
+            current = []
+    tail = "".join(current).strip()
+    if tail:
+        parts.append(tail)
+    return parts
+
+
+def _extract_arg_name(arg_decl: str) -> str:
+    decl = arg_decl.strip()
+    if not decl or decl == "void":
+        return ""
+    func_ptr = re.search(r"\(\s*\*\s*([A-Za-z_]\w*)\s*\)", decl)
+    if func_ptr:
+        return func_ptr.group(1)
+    array_decl = re.search(r"([A-Za-z_]\w*)\s*(?:\[[^\]]*\])+\s*$", decl)
+    if array_decl:
+        return array_decl.group(1)
+    matches = re.findall(r"([A-Za-z_]\w*)", decl)
+    if not matches:
+        return ""
+    for token in reversed(matches):
+        if token not in TYPE_QUALIFIERS:
+            return token
+    return matches[-1]
+
+
+def _extract_arg_type(arg_decl: str) -> str:
+    decl = _collapse_ws(arg_decl)
+    if not decl or decl == "void":
+        return ""
+    arg_name = _extract_arg_name(decl)
+    if arg_name:
+        decl = re.sub(r"\b{}\b".format(re.escape(arg_name)), "", decl, count=1).strip()
+    return _collapse_ws(decl.replace(" *", "*").replace("* ", "* "))
+
+
+def _base_type(type_decl: str) -> str:
+    text = type_decl.replace("*", " ")
+    tokens = [
+        token
+        for token in re.findall(r"[A-Za-z_]\w*", text)
+        if token not in TYPE_QUALIFIERS
+    ]
+    return tokens[-1] if tokens else ""
+
+
+def _is_pointer_type(type_decl: str) -> bool:
+    return "*" in type_decl or bool(re.search(r"\[[^\]]*\]", type_decl))
+
+
+def _is_const_type(type_decl: str) -> bool:
+    return bool(re.search(r"\bconst\b", type_decl))
+
+
+def _parse_api_signature(api_name: str, signature: str) -> ParsedSignature | None:
+    candidate = _collapse_ws(signature).rstrip(";")
+    if not candidate or "(" not in candidate or ")" not in candidate:
+        return None
+    match = re.match(
+        r"(?P<ret>.+?)\b(?P<name>[A-Za-z_]\w*)\s*\((?P<args>.*)\)\s*$",
+        candidate,
+    )
+    if match is None:
+        return None
+    name = match.group("name")
+    if api_name and name != api_name:
+        return None
+    ret_type = _collapse_ws(match.group("ret").replace(" *", "*").replace("* ", "* "))
+    arg_types = [
+        _extract_arg_type(piece)
+        for piece in _split_top_level_commas(match.group("args").strip())
+        if piece.strip() and piece.strip() != "void"
+    ]
+    return ParsedSignature(
+        name=name,
+        ret_type=ret_type,
+        ret_base=_base_type(ret_type),
+        ret_is_pointer=_is_pointer_type(ret_type),
+        ret_is_const=_is_const_type(ret_type),
+        arg_types=arg_types,
+        arg_bases=[_base_type(arg_type) for arg_type in arg_types],
+        arg_is_pointer=[_is_pointer_type(arg_type) for arg_type in arg_types],
+    )
+
+
+def _parsed_signature_map(api_signatures: Dict[str, str] | None) -> Dict[str, ParsedSignature]:
+    parsed: Dict[str, ParsedSignature] = {}
+    for name, signature in (api_signatures or {}).items():
+        info = _parse_api_signature(name, signature)
+        if info is not None:
+            parsed[name] = info
+    return parsed
+
+
+def _setup_arg_bases(info: ParsedSignature | None) -> List[str]:
+    if info is None:
+        return []
+    return unique(
+        base
+        for base, is_pointer in zip(info.arg_bases, info.arg_is_pointer)
+        if is_pointer and base and base not in NON_RESOURCE_POINTER_BASES
+    )
+
+
+def _looks_accessor_api(name: str) -> bool:
+    lower = (name or "").lower()
+    return lower.startswith(("get", "set", "has", "is")) or "_get" in lower or "_set" in lower or "errorptr" in lower
+
+
+def _cleanup_target_bases(api_name: str, info: ParsedSignature | None) -> List[str]:
+    if info is None:
+        return []
+    bases: List[str] = []
+    prefer_return_cleanup = info.ret_is_pointer and not _looks_accessor_api(api_name)
+    if prefer_return_cleanup and info.ret_base:
+        bases.append(info.ret_base)
+    if (not info.ret_is_pointer) or _looks_accessor_api(api_name):
+        bases.extend(
+            base
+            for base, is_pointer in zip(info.arg_bases, info.arg_is_pointer)
+            if is_pointer and base and base not in NON_RESOURCE_POINTER_BASES
+        )
+    return unique(bases)
+
+
+def _signature_aware_init_path(
+    target: str,
+    ordered_candidates: Sequence[str],
+    target_info: ParsedSignature | None,
+    parsed_signatures: Dict[str, ParsedSignature],
+    max_init: int,
+) -> List[str]:
+    if max_init <= 0 or looks_cleanup(target):
+        return []
+    setup_bases = set(_setup_arg_bases(target_info))
+    if not setup_bases:
+        return []
+    out: List[str] = []
+    for name in ordered_candidates:
+        if name == target or not looks_init(name):
+            continue
+        info = parsed_signatures.get(name)
+        if info is None or not info.ret_is_pointer:
+            continue
+        if info.ret_base in setup_bases:
+            out.append(name)
+    return unique(out)[:max_init]
+
+
+def _signature_aware_cleanup_path(
+    target: str,
+    ordered_candidates: Sequence[str],
+    target_info: ParsedSignature | None,
+    parsed_signatures: Dict[str, ParsedSignature],
+    max_cleanup: int,
+) -> List[str]:
+    if max_cleanup <= 0 or looks_cleanup(target):
+        return []
+    target_bases = set(_cleanup_target_bases(target, target_info))
+    if not target_bases:
+        return []
+
+    exact: List[str] = []
+    generic: List[str] = []
+    builder_bases = {
+        info.ret_base
+        for name, info in parsed_signatures.items()
+        if looks_init(name) and info.ret_is_pointer and info.ret_base
+    }
+    for name in ordered_candidates:
+        if name == target or not looks_cleanup(name):
+            continue
+        info = parsed_signatures.get(name)
+        if info is None or len(info.arg_types) != 1 or not info.arg_is_pointer[0]:
+            continue
+        arg_base = info.arg_bases[0]
+        if arg_base in target_bases and arg_base != "void":
+            exact.append(name)
+        elif arg_base == "void":
+            generic.append(name)
+
+    preferred = exact
+    if not preferred and target_info.ret_is_pointer and not target_info.ret_is_const:
+        preferred = generic
+    if not preferred and not target_info.ret_is_pointer:
+        if any(base in builder_bases for base in target_bases):
+            preferred = generic
+    return unique(preferred)[:max_cleanup]
+
+
 def lcp_len(a: str, b: str) -> int:
     i, n = 0, min(len(a), len(b))
     while i < n and a[i] == b[i]:
@@ -338,20 +588,40 @@ def infer_execution_context(
     max_init: int,
     max_cleanup: int,
     max_chain_len: int,
+    api_signatures: Dict[str, str] | None = None,
 ) -> ExecutionContext:
     target, catalog_set = spec.api_name, set(api_catalog)
     n1 = [n for n in calls.get(target, []) if n in catalog_set and n != target]
     n2 = [n for n in callers.get(target, []) if n in catalog_set and n != target]
     neighbors = unique(n1 + n2 + infer_neighbors_from_catalog(target, api_catalog, max_neighbors))[:max_neighbors]
-    init_path = unique([n for n in neighbors + list(api_catalog) if n != target and looks_init(n)])[:max_init]
-    cleanup_path = unique([n for n in neighbors + list(api_catalog) if n != target and looks_cleanup(n)])[:max_cleanup]
+    ordered_candidates = unique(neighbors + list(api_catalog))
+    signature_map = dict(api_signatures or {})
+    if spec.api_signature:
+        signature_map.setdefault(target, spec.api_signature)
+    parsed_signatures = _parsed_signature_map(signature_map)
+    target_info = parsed_signatures.get(target)
+    has_candidate_signatures = any(name in parsed_signatures for name in ordered_candidates if name != target)
+    if has_candidate_signatures and target_info is not None:
+        init_path = _signature_aware_init_path(
+            target,
+            ordered_candidates,
+            target_info,
+            parsed_signatures,
+            max_init,
+        )
+        cleanup_path = _signature_aware_cleanup_path(
+            target,
+            ordered_candidates,
+            target_info,
+            parsed_signatures,
+            max_cleanup,
+        )
+    else:
+        init_path = unique([n for n in ordered_candidates if n != target and looks_init(n)])[:max_init]
+        cleanup_path = unique([n for n in ordered_candidates if n != target and looks_cleanup(n)])[:max_cleanup]
     chain: List[str] = []
     if init_path:
         chain.append(init_path[0])
-    for n in neighbors:
-        if n != target and n not in chain and not looks_cleanup(n):
-            chain.append(n)
-            break
     chain.append(target)
     if cleanup_path and cleanup_path[0] not in chain:
         chain.append(cleanup_path[0])

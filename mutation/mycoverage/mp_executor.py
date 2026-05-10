@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from ctitanfuzz.coverage import CoverageTracker
-from ctitanfuzz.targets import create_target_adapter
-from ctitanfuzz.util.util import ExecutionStatus
+from mutation.coverage import CoverageTracker
+from mutation.targets import create_target_adapter
+from mutation.util.util import ExecutionStatus
 
 coverage_executor = None
 
@@ -13,13 +13,13 @@ def init_test_executor(args, cov=False):
         return
     package_root = args.package_root if hasattr(args, "package_root") else None
     if package_root is None:
-        raise ValueError("package_root is required to initialize ctitanfuzz coverage executor")
+        raise ValueError("package_root is required to initialize the mutation coverage executor")
     target_adapter = create_target_adapter(args.target, package_root)
     coverage_executor = CoverageTracker(
         target_adapter=target_adapter,
         target_root=args.target_root,
         compiler=args.compiler,
-        gcov=args.gcov,
+        coverage_tool=args.coverage_tool,
     )
 
 

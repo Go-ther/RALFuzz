@@ -4,13 +4,19 @@ import argparse
 import json
 import os
 import pathlib
+import sys
 import time
 from collections import defaultdict
 from dataclasses import asdict
 from typing import Dict, List, Set
+
+if __package__ in {None, ""}:
+    sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
+
 from api_specs import auto_discover_api_specs, enrich_missing_signatures, load_api_specs, load_prompt_template, sanitize_api_folder_name
 from execution_context import build_call_graph, collect_source_files, extract_call_sequence, infer_execution_context
 from llm_client import OpenAICompatClient, merge_usage
+from mutation.toolchain_env import configure_clang_environment, normalize_clang_compiler
 from prompting import build_prompt, build_risk_retry_prompt, build_truncation_retry_prompt
 from risk_logic import infer_risk_context, load_risk_cards, risk_retry_score, should_retry_generation_for_risk
 from seed_types import ApiSpec
@@ -72,7 +78,7 @@ def log_run_header(args: argparse.Namespace, spec_count: int, out_root: pathlib.
     quota = args.target_valid_per_api if args.target_valid_per_api > 0 else "no early stop"
     mode = "start fresh" if args.overwrite_existing else "continue existing run"
     print("")
-    print("CTitanFuzz seed generator")
+    print("RALFuzz seed generator")
     print(f"Target APIs: {spec_count}")
     print(f"Attempts per API: {args.samples_per_api}; valid-seed goal: {quota}")
     print(f"Model: {args.model} via {args.endpoint_mode}")
@@ -204,8 +210,20 @@ def main() -> None:
     parser.add_argument("--no-truncation-retry-require-high-risk-neighbor", dest="truncation_retry_require_high_risk_neighbor", action="store_false")
     parser.set_defaults(truncation_retry_require_high_risk_neighbor=False)
     parser.add_argument("--request-timeout", type=int, default=120)
+    parser.add_argument(
+        "--network-retries",
+        type=int,
+        default=2,
+        help="Retry count for transient network/API failures during generation.",
+    )
+    parser.add_argument(
+        "--network-retry-backoff-sec",
+        type=float,
+        default=2.0,
+        help="Base exponential backoff in seconds between generation network retries.",
+    )
     parser.add_argument("--crawl-timeout", type=int, default=20)
-    parser.add_argument("--compiler", default="gcc")
+    parser.add_argument("--compiler", default="clang")
     parser.add_argument("--c-standard", default="c11")
     parser.add_argument("--cflags", default="")
     parser.add_argument("--ldflags", default="")
@@ -257,6 +275,9 @@ def main() -> None:
     parser.add_argument("--max-per-skeleton", type=int, default=2)
     parser.add_argument("--disable-text-dedup", action="store_true", default=False)
     args = parser.parse_args()
+    args.compiler = normalize_clang_compiler(args.compiler, source="seed-generation --compiler")
+    sanitizer_requested = "-fsanitize=" in args.cflags or "-fsanitize=" in args.ldflags
+    configure_clang_environment(compiler=args.compiler, enable_sanitizer=sanitizer_requested)
 
     out_root = pathlib.Path(args.output_dir)
     raw_root, fix_root = out_root / "raw", out_root / "fix"
@@ -308,9 +329,12 @@ def main() -> None:
         args.endpoint_mode,
         args.request_timeout,
         sequential_delay_ms=args.single_shot_delay_ms,
+        network_retries=args.network_retries,
+        network_retry_backoff_sec=args.network_retry_backoff_sec,
     )
     selected_api_catalog = [s.api_name for s in specs]
     context_api_catalog = list(selected_api_catalog)
+    context_signature_map = {s.api_name: s.api_signature for s in specs if s.api_signature}
     if args.auto_api_dir:
         try:
             context_specs = auto_discover_api_specs(
@@ -327,6 +351,7 @@ def main() -> None:
         else:
             if context_specs:
                 context_api_catalog = [s.api_name for s in context_specs]
+                context_signature_map.update({s.api_name: s.api_signature for s in context_specs if s.api_signature})
                 if len(context_api_catalog) > len(selected_api_catalog):
                     print(f"Prepared context hints from {len(context_api_catalog)} discovered API name(s).")
     if args.overwrite_existing:
@@ -383,6 +408,7 @@ def main() -> None:
             args.max_init_candidates,
             args.max_cleanup_candidates,
             args.max_chain_len,
+            context_signature_map,
         )
         risk_context = infer_risk_context(spec, execution_context, risk_overrides, args.max_risk_tags, args.max_boundary_hints)
         prompt = build_prompt(
@@ -956,6 +982,9 @@ def main() -> None:
         for rec in out.get("records", []):
             if rec.get("valid") and rec.get("text_hash"):
                 unique_valid_hashes.add(str(rec.get("text_hash")))
+    summary_args = vars(args).copy()
+    if summary_args.get("api_key"):
+        summary_args["api_key"] = "***redacted***"
     summary = {
         "total_apis_loaded": len(specs),
         "total_apis_generated": len(outputs),
@@ -975,7 +1004,7 @@ def main() -> None:
         "avg_aligned_risk_score": (total_aligned_risk_score / total_samples) if total_samples else 0.0,
         "token_usage": total_token_usage,
         "elapsed_sec": time.time() - run_start,
-        "args": vars(args),
+        "args": summary_args,
     }
     save_json(out_root / "summary.json", summary)
     print("")

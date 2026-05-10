@@ -4,7 +4,7 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
-from ctitanfuzz.util.util import ExecutionStatus, make_temp_build_dir, normalize_code, run_cmd
+from mutation.util.util import ExecutionStatus, make_temp_build_dir, normalize_code, run_cmd
 
 
 @dataclass

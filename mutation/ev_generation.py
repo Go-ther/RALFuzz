@@ -3,23 +3,28 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import sys
 import time
 from pathlib import Path
 
-from ctitanfuzz.c_mutators import SnippetInfill
-from ctitanfuzz.coverage import CoverageTracker
-from ctitanfuzz.guidance import MutationFeedback, RiskGuidance
-from ctitanfuzz.llm import create_llm_client
-from ctitanfuzz.process_file import clean_code, get_initial_programs
-from ctitanfuzz.seed_pool import GA_Coverage, GA_Random, GAR_depth
-from ctitanfuzz.targets import create_target_adapter
-from ctitanfuzz.util.logger import Logger
-from ctitanfuzz.util.util import ExecutionStatus, load_apis, set_seed
-from ctitanfuzz.validate import validate_testcase
+if __package__ in {None, ""}:
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from mutation.c_mutators import SnippetInfill
+from mutation.coverage import CoverageTracker
+from mutation.guidance import MutationFeedback, RiskGuidance
+from mutation.llm import create_llm_client
+from mutation.process_file import clean_code, get_initial_programs
+from mutation.seed_pool import GA_Coverage, GA_Random, GAR_depth
+from mutation.targets import create_target_adapter
+from mutation.toolchain_env import configure_clang_environment, default_coverage_tool, normalize_clang_compiler
+from mutation.util.logger import Logger
+from mutation.util.util import ExecutionStatus, load_apis, set_seed
+from mutation.validate import validate_testcase
 
 
 def _resolve_build_root() -> Path:
-    override = os.environ.get("CTITANFUZZ_BUILD_ROOT", "").strip()
+    override = os.environ.get("RALFUZZ_BUILD_ROOT", "").strip()
     if override:
         return Path(override).resolve()
     return Path(__file__).resolve().parent / ".build"
@@ -87,7 +92,7 @@ def generate_loop(args, model, target_adapter, guidance, full_api_list, original
             target_adapter=target_adapter,
             target_root=args.target_root,
             compiler=args.compiler,
-            gcov=args.gcov,
+            coverage_tool=args.coverage_tool,
             build_root=BUILD_ROOT,
             compile_timeout=args.compile_timeout,
             test_timeout=args.test_timeout,
@@ -273,7 +278,7 @@ def generate_loop(args, model, target_adapter, guidance, full_api_list, original
 
 def generate(args, model, target_adapter):
     os.makedirs(args.folder, exist_ok=True)
-    for subfolder in ["seed", "valid", "flaky", "hangs", "crash", "exception", "notarget"]:
+    for subfolder in ["seed", "valid", "hangs", "crash", "exception", "notarget"]:
         os.makedirs(os.path.join(args.folder, subfolder), exist_ok=True)
     with open(os.path.join(args.folder, "args.txt"), "w", encoding="utf-8") as handle:
         handle.write(str(args))
@@ -383,7 +388,7 @@ def main():
     parser.add_argument("--target_root", type=str, default=None)
     parser.add_argument("--api", type=str, default="all")
     parser.add_argument("--apilist", type=str, default=None)
-    parser.add_argument("--folder", type=str, default=str(Path("ctitanfuzz") / "Results" / "test"))
+    parser.add_argument("--folder", type=str, default=str(Path("mutation") / "Results" / "test"))
     parser.add_argument("--seedfolder", type=str, default=None)
     parser.add_argument("--random_seed", type=int, default=420)
     parser.add_argument("--max_valid", type=int, default=50)
@@ -398,13 +403,15 @@ def main():
     parser.add_argument("--use_single_mutator", action="store_true", default=False)
     parser.add_argument("--replace_type", type=str, default=None)
     parser.add_argument("--mutator_set", type=str, default="all", choices=["all", "noprefix", "nosuffix", "noargument", "nomethod"])
-    parser.add_argument("--compiler", type=str, default="gcc")
-    parser.add_argument("--gcov", type=str, default="gcov")
-    parser.add_argument("--compile_timeout", type=int, default=20)
-    parser.add_argument("--test_timeout", type=int, default=10)
-    parser.add_argument("--enable_sanitizer", action="store_true", default=False)
+    parser.add_argument("--compiler", type=str, default="clang")
+    parser.add_argument("--coverage-tool", dest="coverage_tool", type=str, default=default_coverage_tool())
+    parser.add_argument("--compile-timeout", dest="compile_timeout", type=int, default=20)
+    parser.add_argument("--test-timeout", dest="test_timeout", type=int, default=10)
+    parser.add_argument("--enable-sanitizer", dest="enable_sanitizer", action="store_true", default=False)
     parser.add_argument("--max_stagnation_rounds", type=int, default=25)
     args = parser.parse_args()
+    args.compiler = normalize_clang_compiler(args.compiler, source="mutation --compiler")
+    configure_clang_environment(compiler=args.compiler, enable_sanitizer=args.enable_sanitizer)
 
     package_root = Path(__file__).resolve().parent
     target_adapter = create_target_adapter(args.target, package_root)

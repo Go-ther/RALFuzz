@@ -3,7 +3,7 @@ from __future__ import annotations
 import random
 import re
 
-from ctitanfuzz.llm.base import BaseLLM, MaskedCodeMixin
+from mutation.llm.base import BaseLLM, MaskedCodeMixin
 
 
 class MockInfillLLM(BaseLLM, MaskedCodeMixin):

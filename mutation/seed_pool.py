@@ -5,9 +5,9 @@ import math
 
 import numpy as np
 
-from ctitanfuzz.c_mutators import DepthFinder, SnippetInfill, SnippetInfillArbitraryAPI, UniqueFinder
-from ctitanfuzz.guidance import MutationFeedback, RiskGuidance, freshness_penalty
-from ctitanfuzz.metadata import stable_softmax
+from mutation.c_mutators import DepthFinder, SnippetInfill, SnippetInfillArbitraryAPI, UniqueFinder
+from mutation.guidance import MutationFeedback, RiskGuidance, freshness_penalty
+from mutation.metadata import stable_softmax
 
 
 class GA:
@@ -159,15 +159,15 @@ class GA:
             self.replace_type = [self.replace_type]
         else:
             if self.mutator_set == "noprefix":
-                self.replace_type = ["argument", "method", "suffix", "suffix-argument"]
+                self.replace_type = ["argument", "method", "neighbor", "suffix", "suffix-argument"]
             elif self.mutator_set == "nosuffix":
-                self.replace_type = ["argument", "method", "prefix", "prefix-argument"]
+                self.replace_type = ["argument", "method", "neighbor", "prefix", "prefix-argument"]
             elif self.mutator_set == "noargument":
-                self.replace_type = ["method", "prefix", "prefix-argument", "suffix", "suffix-argument"]
+                self.replace_type = ["method", "neighbor", "prefix", "prefix-argument", "suffix", "suffix-argument"]
             elif self.mutator_set == "nomethod":
-                self.replace_type = ["argument", "prefix", "prefix-argument", "suffix", "suffix-argument"]
+                self.replace_type = ["argument", "neighbor", "prefix", "prefix-argument", "suffix", "suffix-argument"]
             elif self.mutator_set == "all":
-                self.replace_type = ["argument", "method", "prefix", "prefix-argument", "suffix", "suffix-argument"]
+                self.replace_type = ["argument", "method", "neighbor", "prefix", "prefix-argument", "suffix", "suffix-argument"]
             else:
                 raise ValueError("Replace_type {} not supported.".format(self.mutator_set))
 
@@ -205,6 +205,15 @@ class GA:
                     replace_type="argument",
                 )
                 num_replaced, infill_code, _ = infill.add_infill(code)
+            return num_replaced, infill_code
+        if replace_type == "neighbor":
+            infill = SnippetInfill(
+                mask_identifier=self.mask_identifier,
+                api_call=self.api_call,
+                full_api_list=self.full_api_list,
+                replace_type="neighbor",
+            )
+            num_replaced, infill_code, _ = infill.add_infill(code)
             return num_replaced, infill_code
         infill = SnippetInfill(
             mask_identifier=self.mask_identifier,

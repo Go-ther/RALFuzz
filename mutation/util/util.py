@@ -15,7 +15,6 @@ class ExecutionStatus(IntEnum):
     SUCCESS = auto()
     EXCEPTION = auto()
     CRASH = auto()
-    NOTCALL = auto()
     TIMEOUT = auto()
 
 
@@ -111,7 +110,7 @@ def read_all_tasks_from_dir(
 
 def parse_result_summary(line: str):
     try:
-        if not line.startswith("TitanFuzzTestcase"):
+        if not line.startswith("RALFuzzTestcase"):
             return None, None, None, None
         parts = line.split(" ")
         if len(parts) < 5:
@@ -121,7 +120,7 @@ def parse_result_summary(line: str):
         return None, None, None, None
 
 
-def make_temp_build_dir(root: str | Path, prefix: str = "ctitanfuzz_") -> Path:
+def make_temp_build_dir(root: str | Path, prefix: str = "mutation_") -> Path:
     root_path = Path(root).resolve()
     root_path.mkdir(parents=True, exist_ok=True)
     for _ in range(256):

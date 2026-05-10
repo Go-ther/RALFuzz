@@ -17,6 +17,7 @@ Thumbs.db
 venv/
 
 # Test / tooling caches
+.cache/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
@@ -25,6 +26,7 @@ htmlcov/
 
 # Runtime outputs and caches
 runtime_data/
+api/cJSON/
 
 # Packaging / release archives
 *.egg-info/

@@ -6,7 +6,7 @@ import time
 from typing import Dict, List
 from urllib import error, request
 
-from ctitanfuzz.llm.base import BaseLLM, MaskedCodeMixin
+from mutation.llm.base import BaseLLM, MaskedCodeMixin
 
 
 def _usage_from_response(data: Dict) -> Dict:
@@ -76,8 +76,9 @@ class OpenAICompatibleInfillLLM(BaseLLM, MaskedCodeMixin):
     ) -> List[Dict[str, str]]:
         system_prompt = (
             "You are filling masked regions inside a C program used for library API fuzzing. "
-            "Preserve the step-to-step guidance comments and return only valid JSON. "
-            "Use this exact schema: {\"replacements\": [\"...\"]}. "
+            "Use the step-to-step guidance comments only as instructions; do not copy RALFUZZ prompt comments into the final code. "
+            "Return only valid json. "
+            "Use this exact json schema: {\"replacements\": [\"...\"]}. "
             "The replacements array length must equal the number of masks. "
             "Each string is the exact replacement text for the corresponding mask index. "
             "Do not include markdown, explanations, or the full program."
@@ -87,12 +88,14 @@ class OpenAICompatibleInfillLLM(BaseLLM, MaskedCodeMixin):
             diversity_note = (
                 "\nThis is sample {}/{} for the same masked program. "
                 "Keep it behaviorally distinct from sibling samples when possible by varying boundary cases, "
-                "helper-call structure, local buffers, or cleanup choices, while preserving the target API."
+                "executed helper-call structure, or local buffers, while preserving the target API."
             ).format(sample_index + 1, total_samples)
         user_prompt = (
             "Fill every mask in the following C code.\n"
-            "Masks are named <|mask:0|>, <|mask:1|>, ... and the response must be a JSON object with a replacements array.\n"
+            "Masks are named <|mask:0|>, <|mask:1|>, ... and the response must be a json object with a replacements array.\n"
             "Keep includes, ownership, cleanup, and target API usage consistent.\n"
+            "Do not repeat includes already present. Do not emit RALFUZZ prompt comments. Do not introduce unused helper functions.\n"
+            "If you add a neighbor API, prefer one short executed call when it fits naturally; skip it rather than forcing extra scaffolding. Do not delete or free the same pointer twice.\n"
             "Number of masks: {}{}\n\n"
             "{}"
         ).format(expected_masks, diversity_note, infill_code)

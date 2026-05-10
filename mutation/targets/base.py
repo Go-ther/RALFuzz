@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from ctitanfuzz.metadata import LibraryMetadata
+from mutation.metadata import LibraryMetadata
 
 
 DEFAULT_STEP_PROMPT_TEMPLATE = """Task 1: add the required C headers for {} and standard helpers.
@@ -76,15 +76,15 @@ class TargetAdapter:
     def attach_generation_context(self, api: str, infill_code: str) -> str:
         prompt = self.build_step_prompt(api)
         return (
-            "/* CTITANFUZZ_STEP_PROMPT_BEGIN\n"
+            "/* RALFUZZ_STEP_PROMPT_BEGIN\n"
             + prompt
-            + "\nCTITANFUZZ_STEP_PROMPT_END */\n"
+            + "\nRALFUZZ_STEP_PROMPT_END */\n"
             + infill_code
         )
 
     def strip_generation_context(self, code: str) -> str:
-        marker_begin = "/* CTITANFUZZ_STEP_PROMPT_BEGIN"
-        marker_end = "CTITANFUZZ_STEP_PROMPT_END */"
+        marker_begin = "/* RALFUZZ_STEP_PROMPT_BEGIN"
+        marker_end = "RALFUZZ_STEP_PROMPT_END */"
         if marker_begin not in code:
             return code
         begin = code.find(marker_begin)
@@ -136,7 +136,7 @@ class TargetAdapter:
         raise NotImplementedError
 
     def classify_oracle_failure(self, stdout_stderr: str) -> tuple[str | None, str]:
-        if "CTITANFUZZ_ORACLE:" in stdout_stderr:
+        if "RALFUZZ_ORACLE:" in stdout_stderr:
             return "OracleFailCatch", stdout_stderr
         return None, stdout_stderr
 

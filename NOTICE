@@ -1,7 +1,7 @@
-CTitanFuzz
-Copyright (c) 2026 Gother
+RALFuzz
+Copyright (c) 2026 Jinyu Zhou
 
-This repository, CTitanFuzz, is a heavily modified derivative of the
+This repository, RALFuzz, is a heavily modified derivative of the
 TitanFuzz artifact released on Zenodo:
 
 "ISSTA2023 Artifact for 'Large Language Models Are Zero-Shot Fuzzers:
@@ -17,19 +17,34 @@ Original authors/creators listed on the Zenodo record:
 - Chenyuan Yang
 - Lingming Zhang
 
+We gratefully acknowledge the TitanFuzz authors and their public artifact; the
+availability of that artifact made this derivative research prototype possible.
+
 The upstream artifact is distributed under the Creative Commons Attribution
 4.0 International License (CC BY 4.0):
 https://creativecommons.org/licenses/by/4.0/
+
+The RALFuzz software distribution is released under the MIT License. The
+upstream TitanFuzz attribution above is retained to acknowledge the derivative
+relationship and the license terms of the upstream artifact.
 
 This repository includes substantial modifications, extensions, and
 reorganization relative to the upstream artifact. Any errors, omissions, or
 changes in behavior in this derivative repository are the responsibility of
 this repository's maintainers, not the original authors.
 
-CTitanFuzz is an independent research prototype and is not an official
+RALFuzz is an independent research prototype and is not an official
 extension of, nor affiliated with, the original TitanFuzz project or its
 authors.
 
+The optional illustrative cJSON target used by the quick-start workflow is not
+bundled as part of the RALFuzz software distribution. When requested, the fetch
+scripts download cJSON v1.7.19 from the upstream cJSON repository:
+https://github.com/DaveGamble/cJSON
+cJSON is distributed under the MIT License by Dave Gamble and cJSON
+contributors; the downloaded source files include the upstream copyright and
+license notice.
+
 When reusing this repository, please preserve attribution to both:
 - the original TitanFuzz artifact and its authors
-- this derivative CTitanFuzz repository and its maintainers
+- this derivative RALFuzz repository and its maintainers

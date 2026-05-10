@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import os
+import shlex
 from pathlib import Path
 
-from ctitanfuzz.toolchain import compile_testcase, run_compiled_binary
-from ctitanfuzz.util.util import ExecutionStatus, cleanup_dir, run_cmd
+from mutation.toolchain import compile_testcase, run_compiled_binary
+from mutation.util.util import ExecutionStatus, cleanup_dir, run_cmd
 
 
 class CoverageTracker:
@@ -11,16 +13,16 @@ class CoverageTracker:
         self,
         target_adapter,
         target_root: str | Path,
-        compiler: str = "gcc",
-        gcov: str = "gcov",
-        build_root: str | Path = "ctitanfuzz/.build",
+        compiler: str = "clang",
+        coverage_tool: str = "llvm-cov gcov",
+        build_root: str | Path = "mutation/.build",
         compile_timeout: int = 20,
         test_timeout: int = 10,
     ) -> None:
         self.target_adapter = target_adapter
         self.target_root = Path(target_root).resolve()
         self.compiler = compiler
-        self.gcov = gcov
+        self.coverage_tool = coverage_tool
         self.build_root = build_root
         self.compile_timeout = compile_timeout
         self.test_timeout = test_timeout
@@ -46,14 +48,21 @@ class CoverageTracker:
 
     def _collect_coverage(self, build_dir: Path) -> int:
         total = 0
-        for source_path in self.target_adapter.get_focus_files(self.target_root):
+        coverage_cmd = shlex.split(self.coverage_tool, posix=os.name != "nt")
+        for gcov_file in build_dir.glob("*.gcov"):
+            try:
+                gcov_file.unlink()
+            except OSError:
+                pass
+        for gcno_file in sorted(build_dir.glob("*.gcno")):
             status, _ = run_cmd(
-                [self.gcov, "-b", "-o", str(build_dir), str(source_path)],
+                coverage_cmd + ["-b", str(gcno_file)],
                 timeout=self.compile_timeout,
                 cwd=build_dir,
             )
             if status != ExecutionStatus.SUCCESS:
                 continue
+        for source_path in self.target_adapter.get_focus_files(self.target_root):
             gcov_file = build_dir / (source_path.name + ".gcov")
             if not gcov_file.exists():
                 matches = list(build_dir.glob(source_path.name + "*.gcov"))

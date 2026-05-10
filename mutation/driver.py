@@ -3,25 +3,33 @@ from __future__ import annotations
 import argparse
 import os
 import subprocess
+import sys
 import time
+from pathlib import Path
 
-from ctitanfuzz.util import util
+if __package__ in {None, ""}:
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from mutation.toolchain_env import configure_clang_environment, normalize_clang_compiler
+from mutation.util import util
 
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--car", type=str, default="ctitanfuzz.torch2cuda")
+    parser.add_argument("--car", type=str, default="mutation.torch2cuda")
     parser.add_argument("--target", type=str, default="generic", choices=["generic", "auto"])
     parser.add_argument("--target_root", type=str, default=None)
     parser.add_argument("--mode", type=str, default="race")
     parser.add_argument("--input", type=str, default=None)
     parser.add_argument("--output", type=str, default="trace.txt")
     parser.add_argument("--cont", action="store_true", default=False)
-    parser.add_argument("--compiler", type=str, default="gcc")
-    parser.add_argument("--compile_timeout", type=int, default=20)
-    parser.add_argument("--test_timeout", type=int, default=10)
-    parser.add_argument("--enable_sanitizer", action="store_true", default=False)
+    parser.add_argument("--compiler", type=str, default="clang")
+    parser.add_argument("--compile-timeout", dest="compile_timeout", type=int, default=20)
+    parser.add_argument("--test-timeout", dest="test_timeout", type=int, default=10)
+    parser.add_argument("--enable-sanitizer", dest="enable_sanitizer", action="store_true", default=False)
     args = parser.parse_args()
+    args.compiler = normalize_clang_compiler(args.compiler, source="driver --compiler")
+    configure_clang_environment(compiler=args.compiler, enable_sanitizer=args.enable_sanitizer)
 
     tasks = util.read_all_tasks_from_dir(args.input, extension=".c")
     n_tasks = len(tasks)
@@ -61,15 +69,15 @@ def main() -> int:
                 args.target,
                 "--compiler",
                 args.compiler,
-                "--compile_timeout",
+                "--compile-timeout",
                 str(args.compile_timeout),
-                "--test_timeout",
+                "--test-timeout",
                 str(args.test_timeout),
             ]
             if args.target_root:
                 cmd_line.extend(["--target_root", args.target_root])
             if args.enable_sanitizer:
-                cmd_line.append("--enable_sanitizer")
+                cmd_line.append("--enable-sanitizer")
 
             proc = subprocess.Popen(
                 cmd_line,
@@ -118,7 +126,7 @@ def main() -> int:
             fail_id = cur - 1
             fail_api, fail_label, _ = util.parse_task(tasks[fail_id])
             print(
-                "\nTitanFuzzTestcase",
+                "\nRALFuzzTestcase",
                 fail_id,
                 fail_api,
                 fail_label,

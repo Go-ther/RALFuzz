@@ -1,2 +1,1 @@
-"""Utility helpers for CTitanFuzz."""
-
+"""Utility helpers for RALFuzz."""

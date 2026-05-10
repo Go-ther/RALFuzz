@@ -5,9 +5,9 @@ import math
 import re
 from dataclasses import dataclass, field
 
-from ctitanfuzz.c_mutators import DepthFinder, UniqueFinder, find_call_spans
-from ctitanfuzz.metadata import LibraryMetadata, score_distance
-from ctitanfuzz.util.util import ExecutionStatus
+from mutation.c_mutators import DepthFinder, UniqueFinder, find_call_spans
+from mutation.metadata import LibraryMetadata, score_distance
+from mutation.util.util import ExecutionStatus
 
 
 @dataclass
@@ -227,6 +227,7 @@ class RiskGuidance:
         struct_score_map = {
             "argument": 0.55,
             "method": 0.65,
+            "neighbor": 0.95,
             "prefix": 0.72,
             "prefix-argument": 0.82,
             "suffix": 0.72,
@@ -235,6 +236,7 @@ class RiskGuidance:
         exec_score_map = {
             "argument": 0.95,
             "method": 0.7,
+            "neighbor": 0.78,
             "prefix": 0.52,
             "prefix-argument": 0.62,
             "suffix": 0.48,
@@ -242,27 +244,29 @@ class RiskGuidance:
         }
 
         struct_score = struct_score_map.get(replace_type, 0.5)
-        if state.unique_api_count <= 1 and replace_type in {"prefix", "suffix", "prefix-argument", "suffix-argument"}:
+        if state.unique_api_count <= 1 and replace_type in {"neighbor", "prefix", "suffix", "prefix-argument", "suffix-argument"}:
             struct_score += 0.15
-        if state.call_chain_len <= 2 and replace_type in {"method", "prefix", "suffix"}:
+        if state.call_chain_len <= 2 and replace_type in {"method", "neighbor", "prefix", "suffix"}:
             struct_score += 0.1
 
         risk_score = 0.0
         if target_profile is not None:
             if target_profile.boundary_hints and "argument" in replace_type:
                 risk_score += 0.35
-            if target_profile.high_risk_neighbors and replace_type in {"method", "prefix", "suffix", "prefix-argument", "suffix-argument"}:
+            if target_profile.high_risk_neighbors and replace_type in {"method", "neighbor", "prefix", "suffix", "prefix-argument", "suffix-argument"}:
                 risk_score += 0.4
             risk_score += 0.25 * target_profile.risk_level
         if target_cg is not None:
-            if target_cg.neighbors and replace_type in {"method", "prefix", "suffix"}:
+            if target_cg.neighbors and replace_type in {"method", "neighbor", "prefix", "suffix"}:
                 risk_score += 0.2
-            if target_cg.cleanup_paths and replace_type in {"prefix", "suffix", "prefix-argument", "suffix-argument"}:
+            if target_cg.cleanup_paths and replace_type in {"neighbor", "prefix", "suffix", "prefix-argument", "suffix-argument"}:
                 risk_score += 0.08
-            if not state.risk_path_hits and target_cg.short_call_chains and replace_type in {"method", "prefix", "suffix", "prefix-argument", "suffix-argument"}:
+            if not state.risk_path_hits and target_cg.short_call_chains and replace_type in {"method", "neighbor", "prefix", "suffix", "prefix-argument", "suffix-argument"}:
                 risk_score += 0.32
-            if not any(neighbor in state.called_apis for neighbor in target_cg.neighbors) and target_cg.neighbors and replace_type in {"method", "prefix", "suffix", "prefix-argument", "suffix-argument"}:
+            if not any(neighbor in state.called_apis for neighbor in target_cg.neighbors) and target_cg.neighbors and replace_type in {"method", "neighbor", "prefix", "suffix", "prefix-argument", "suffix-argument"}:
                 risk_score += 0.18
+            if replace_type == "neighbor" and target_cg.neighbors:
+                risk_score += 0.45
             risk_score += 0.15 * target_cg.cg_priority
 
         exec_score = exec_score_map.get(replace_type, 0.5)

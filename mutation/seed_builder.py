@@ -3,7 +3,7 @@ from __future__ import annotations
 import shutil
 from pathlib import Path
 
-from ctitanfuzz.metadata import ApiSpec, LibraryMetadata, _base_type
+from mutation.metadata import ApiSpec, LibraryMetadata, _base_type
 
 
 STANDARD_HEADERS = [
@@ -52,7 +52,7 @@ def _guess_input_literal(metadata: LibraryMetadata, spec: ApiSpec) -> str:
     if "xml" in lowered:
         return "<root><item>seed</item></root>"
     if "path" in lowered:
-        return "/tmp/ctitanfuzz-seed"
+        return "/tmp/mutation-seed"
     return "seed-input"
 
 

@@ -1,7 +1,8 @@
+﻿/*
 Library: cJSON (version: unknown)
 Target: cJSON * cJSON_Parse(const char *value);
 Header: <cJSON.h>
-Exec: init=cJSON_ParseWithOpts, cJSON_ParseWithLength; cleanup=cJSON_free, cJSON_Delete; neighbors=cJSON_ParseWithOpts, cJSON_ParseWithLength, cJSON_ParseWithLengthOpts; chain=cJSON_ParseWithOpts -> cJSON_ParseWithLength -> cJSON_Parse -> cJSON_free
+Exec: init=(none); cleanup=cJSON_Delete; neighbors=cJSON_ParseWithOpts, cJSON_ParseWithLength, cJSON_ParseWithLengthOpts; chain=cJSON_Parse -> cJSON_Delete
 Risk: level=medium; tags=input-structure, parser-state, pointer-lifetime; hints=Use malformed, truncated, oversized, and deeply nested inputs | Try invalid encodings and random binary payloads; history=Parser-like APIs often fail on malformed nesting and length mismatches.; high-risk=cJSON_ParseWithOpts, cJSON_ParseWithLength
 
 Write one standalone C11 harness:
@@ -11,3 +12,18 @@ Write one standalone C11 harness:
 - prefer concise code, at most one helper function
 - avoid long comments, markdown fences, and giant buffers
 - output code only
+*/
+
+/* Lifecycle note: because cleanup is listed, make sure at least one executed path calls `cJSON_Delete` after `cJSON_Parse`. */
+
+/* Risk hard constraints (must satisfy):
+- Include at least 1 short risk probes from: malformed/truncated input, deep nesting, binary/hex payload, numeric extremes, pointer reuse.
+- Keep the program concise: at most one helper, short inputs, no long comments.
+- If you test deep nesting, keep it small and explicit; do not generate giant nested literals.
+- Use exactly this header include: `#include "cJSON.h"`; do not rewrite the include path or casing.
+- Every include, string literal, and character literal must be valid C11 syntax.
+- If testing binary/hex payloads, do not use `\x` escapes inside C string literals when hex digits follow; prefer short byte arrays or safe short literals.
+- Do not generate only happy-path inputs; print at least one status/result.
+- Include at least one explicit boundary literal from: NULL, "", -1, INT_MAX, INT_MIN, SIZE_MAX.
+*/
+

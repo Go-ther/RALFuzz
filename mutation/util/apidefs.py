@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from ctitanfuzz.targets import create_target_adapter
+from mutation.targets import create_target_adapter
 
 
 def _get_api_defs(api_def_fn):

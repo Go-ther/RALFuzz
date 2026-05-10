@@ -1,12 +1,18 @@
 from __future__ import annotations
 
 import argparse
+import os
+import sys
 from pathlib import Path
 
-from ctitanfuzz.targets import create_target_adapter
-from ctitanfuzz.util import util
-from ctitanfuzz.util.util import ExecutionStatus
-from ctitanfuzz.validate import validate_status
+if __package__ in {None, ""}:
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+
+from mutation.targets import create_target_adapter
+from mutation.toolchain_env import configure_clang_environment, normalize_clang_compiler
+from mutation.util import util
+from mutation.util.util import ExecutionStatus
+from mutation.validate import validate_status
 
 SEED = 420
 OUTPUT_LIMIT = 2048
@@ -14,7 +20,7 @@ target_adapter = None
 
 
 def _resolve_build_root() -> Path:
-    override = os.environ.get("CTITANFUZZ_BUILD_ROOT", "").strip()
+    override = os.environ.get("RALFUZZ_BUILD_ROOT", "").strip()
     if override:
         return Path(override).resolve()
     return Path(__file__).resolve().parent / ".build"
@@ -55,7 +61,7 @@ def framework_src_batch(args: argparse.Namespace, core_func) -> None:
             if reason == "FrameworkCrashCatch":
                 print(detail)
                 raise
-            print("\nTitanFuzzTestcase", task_id, api, label, reason, SEED, detail)
+            print("\nRALFuzzTestcase", task_id, api, label, reason, SEED, detail)
 
 
 def core_single(seed: int, args: argparse.Namespace, src: str) -> None:
@@ -89,11 +95,13 @@ def main() -> None:
     parser.add_argument("--input", type=str, default=None)
     parser.add_argument("--start", type=int, default=0)
     parser.add_argument("--singleapi", action="store_true", default=False)
-    parser.add_argument("--compiler", type=str, default="gcc")
-    parser.add_argument("--compile_timeout", type=int, default=20)
-    parser.add_argument("--test_timeout", type=int, default=10)
-    parser.add_argument("--enable_sanitizer", action="store_true", default=False)
+    parser.add_argument("--compiler", type=str, default="clang")
+    parser.add_argument("--compile-timeout", dest="compile_timeout", type=int, default=20)
+    parser.add_argument("--test-timeout", dest="test_timeout", type=int, default=10)
+    parser.add_argument("--enable-sanitizer", dest="enable_sanitizer", action="store_true", default=False)
     args = parser.parse_args()
+    args.compiler = normalize_clang_compiler(args.compiler, source="c_oracle --compiler")
+    configure_clang_environment(compiler=args.compiler, enable_sanitizer=args.enable_sanitizer)
 
     global target_adapter
     target_adapter = create_target_adapter(args.target, Path(__file__).resolve().parent)

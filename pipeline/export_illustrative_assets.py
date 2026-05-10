@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 
 
-CATEGORY_DIRS = ("valid", "exception", "crash", "notarget", "hangs", "flaky")
+CATEGORY_DIRS = ("valid", "exception", "crash", "notarget", "hangs")
 
 
 def load_json(path: Path, default: Any) -> Any:
@@ -201,7 +201,6 @@ def stage2_snapshot(mutation_dir: Path, api: str) -> dict[str, Any]:
         "crash_count": category_counts["crash"],
         "notarget_count": category_counts["notarget"],
         "hang_count": category_counts["hangs"],
-        "flaky_count": category_counts["flaky"],
         "duplicate_count": int(duplicate_count),
         "unique_behavior_signature_count": len(signature_counts),
         "behavior_signature_counts": dict(sorted(signature_counts.items())),
@@ -269,7 +268,6 @@ def main() -> int:
             f"- crash: `{stage2['crash_count']}`",
             f"- notarget: `{stage2['notarget_count']}`",
             f"- hangs: `{stage2['hang_count']}`",
-            f"- flaky: `{stage2['flaky_count']}`",
             f"- unique behavior signatures: `{stage2['unique_behavior_signature_count']}`",
             f"- wall-clock seconds: `{stage2['wall_clock_sec']}`",
             "",

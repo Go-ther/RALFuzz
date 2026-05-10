@@ -72,6 +72,8 @@ class OpenAICompatClient:
         endpoint_mode: str = "auto",
         timeout_sec: int = 120,
         sequential_delay_ms: int = 0,
+        network_retries: int = 2,
+        network_retry_backoff_sec: float = 2.0,
     ) -> None:
         self.base_url = base_url.rstrip("/")
         self.api_key = api_key
@@ -79,6 +81,11 @@ class OpenAICompatClient:
         self.endpoint_mode = endpoint_mode
         self.timeout_sec = timeout_sec
         self.sequential_delay_ms = max(0, sequential_delay_ms)
+        self.network_retries = max(0, int(network_retries))
+        self.network_retry_backoff_sec = max(0.0, float(network_retry_backoff_sec))
+
+    def _is_deepseek_api(self) -> bool:
+        return "api.deepseek.com" in self.base_url.lower()
 
     def _base_root(self) -> str:
         if self.base_url.endswith("/v1"):
@@ -93,21 +100,48 @@ class OpenAICompatClient:
             return self._base_root() + path
         return self.base_url + normalized_path
 
+    def _should_retry_status(self, status_code: int) -> bool:
+        return status_code in {408, 409, 429, 500, 502, 503, 504}
+
+    def _retry_delay_sec(self, attempt_index: int) -> float:
+        if self.network_retry_backoff_sec <= 0:
+            return 0.0
+        return self.network_retry_backoff_sec * (2 ** max(0, attempt_index))
+
     def _post(self, path: str, payload: Dict) -> Dict:
         headers = {"Content-Type": "application/json"}
         if self.api_key:
             headers["Authorization"] = f"Bearer {self.api_key}"
-        resp = requests.post(self._resolve_url(path), headers=headers, json=payload, timeout=self.timeout_sec)
-        try:
-            resp.raise_for_status()
-        except requests.HTTPError as exc:
-            body = ""
+        url = self._resolve_url(path)
+        max_attempts = 1 + self.network_retries
+        for attempt in range(max_attempts):
             try:
-                body = resp.text
-            except Exception:
-                pass
-            raise RuntimeError(f"HTTP {resp.status_code}: {body}") from exc
-        return resp.json()
+                resp = requests.post(url, headers=headers, json=payload, timeout=self.timeout_sec)
+            except requests.RequestException:
+                if attempt + 1 >= max_attempts:
+                    raise
+                delay_sec = self._retry_delay_sec(attempt)
+                if delay_sec > 0:
+                    time.sleep(delay_sec)
+                continue
+
+            try:
+                resp.raise_for_status()
+            except requests.HTTPError as exc:
+                body = ""
+                try:
+                    body = resp.text
+                except Exception:
+                    pass
+                if attempt + 1 < max_attempts and self._should_retry_status(resp.status_code):
+                    delay_sec = self._retry_delay_sec(attempt)
+                    if delay_sec > 0:
+                        time.sleep(delay_sec)
+                    continue
+                raise RuntimeError(f"HTTP {resp.status_code}: {body}") from exc
+            return resp.json()
+
+        raise RuntimeError(f"request retries exhausted for {url}")
 
     def _chat_completion(
         self,
@@ -124,6 +158,8 @@ class OpenAICompatClient:
             "top_p": top_p,
             "max_tokens": max_tokens,
         }
+        if self._is_deepseek_api():
+            payload["thinking"] = {"type": "disabled"}
         if n is not None:
             payload["n"] = n
         data = self._post("/v1/chat/completions", payload)

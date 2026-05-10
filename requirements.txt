@@ -1,11 +1,6 @@
-# Core dependencies
 requests
 numpy
-
-# Optional: local Hugging Face backend in mutation/llm/local_hf.py
 torch
 transformers
-
-# Optional: bundled Unity test-report helpers under mutation/api/cJSON/tests/unity/auto/
 pyparsing
 junit-xml
