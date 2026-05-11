@@ -463,6 +463,14 @@ snapshot artifacts rather than to a fresh live run.
 - Different live results: this is expected with remote LLMs; compare against
   `repro_artifacts/` for frozen evidence.
 
+## Authors
+
+- Jinyu Zhou
+- Zitong Zhu
+- Yuqi Xiong
+- Zhijie Li
+- Jianxi Wu
+
 ## Acknowledgements
 
 RALFuzz is a heavily modified derivative of the TitanFuzz artifact. We
