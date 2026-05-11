@@ -157,10 +157,10 @@ if (-not $MutationApiKey) {
 $runSeedGeneration = $Mode -in @("full", "seed")
 $runMutation = $Mode -in @("full", "mutation")
 if ($runSeedGeneration -and ($SeedBaseUrl -like "https://api.deepseek.com*") -and (-not $SeedApiKey)) {
-    throw "Missing seed API key. Set SEED_API_KEY (or DEEPSEEK_API_KEY / OPENAI_API_KEY) or pass -SeedApiKey <key>."
+    throw "Missing seed API key. Set SEED_API_KEY."
 }
 if ($runMutation -and ($MutationProvider -in @("openai_compatible", "deepseek")) -and (-not $MutationApiKey)) {
-    throw "Missing mutation API key. Set MUTATION_API_KEY (or DASHSCOPE_API_KEY / QWEN_API_KEY / LLM_API_KEY) or pass -MutationApiKey <key>."
+    throw "Missing mutation API key. Set MUTATION_API_KEY."
 }
 if ($launcherBoundParameters.ContainsKey("EnableSanitizer") -and $launcherBoundParameters.ContainsKey("DisableSanitizer")) {
     throw "Use only one of -EnableSanitizer and -DisableSanitizer."

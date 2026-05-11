@@ -31,7 +31,7 @@ def create_llm_client(args, target_adapter):
 
         api_key = args.llm_api_key or os.environ.get("LLM_API_KEY", "")
         if not api_key:
-            raise ValueError("LLM API key is missing. Set --llm_api_key or LLM_API_KEY.")
+            raise ValueError("Missing LLM API key. Set LLM_API_KEY.")
         if not args.llm_api_base:
             raise ValueError("--llm_api_base is required for openai_compatible provider.")
         model_name = args.model_name or "gpt-4o-mini"

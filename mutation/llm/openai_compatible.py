@@ -196,7 +196,7 @@ class DeepSeekInfillLLM(OpenAICompatibleInfillLLM):
     ):
         api_key = api_key or os.environ.get("DEEPSEEK_API_KEY", "")
         if not api_key:
-            raise ValueError("DeepSeek API key is missing. Set --llm_api_key or DEEPSEEK_API_KEY.")
+            raise ValueError("Missing DeepSeek API key. Set DEEPSEEK_API_KEY.")
         super().__init__(
             model_name=model_name,
             api_base=api_base,

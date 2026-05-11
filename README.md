@@ -1,5 +1,7 @@
 # RALFuzz
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20116397.svg)](https://doi.org/10.5281/zenodo.20116397)
+
 RALFuzz is an execution- and risk-aware workflow for generating and mutating
 fuzz harnesses for native C library APIs. It has two stages:
 
@@ -55,6 +57,9 @@ mutation/toolchain_env.py
 
 `runtime_data/` is local run state. It can be deleted and regenerated.
 `repro_artifacts/` is the release-oriented snapshot area.
+In particular, `repro_artifacts/illustrative/` stores the frozen snapshot
+files referenced by the paper: manifests, summary JSON files, and example
+harness/prompt artifacts for the illustrative `cJSON_Parse` run.
 Third-party target libraries are not bundled as part of the RALFuzz software
 distribution; `api/cJSON/` is created locally by the fetch scripts when users
 want to run the illustrative cJSON workflow.
@@ -149,53 +154,6 @@ Provider and model selection can be overridden through the launchers with:
 
 - `SEED_BASE_URL`, `SEED_MODEL`, `SEED_ENDPOINT_MODE`
 - `MUTATION_PROVIDER`, `MUTATION_BASE_URL`, `MUTATION_MODEL`
-
-## Reviewer Quick Start
-
-The fastest non-network check is to inspect the frozen illustrative artifacts
-without rerunning the LLMs:
-
-PowerShell:
-
-```powershell
-Get-Content .\repro_artifacts\illustrative\manifest.md
-python -m json.tool .\repro_artifacts\illustrative\stage1_seed_summary.json > $null
-python -m json.tool .\repro_artifacts\illustrative\stage2_mutation_snapshot.json > $null
-```
-
-Bash:
-
-```bash
-sed -n '1,40p' repro_artifacts/illustrative/manifest.md
-python -m json.tool repro_artifacts/illustrative/stage1_seed_summary.json >/dev/null
-python -m json.tool repro_artifacts/illustrative/stage2_mutation_snapshot.json >/dev/null
-```
-
-To validate the default launcher wiring, first fetch the pinned external cJSON
-target input. The fetch scripts download cJSON `v1.7.19` from the upstream
-MIT-licensed cJSON repository and place it under `api/cJSON/`, which is ignored
-by git.
-
-PowerShell:
-
-```powershell
-.\pipeline\fetch_cjson.ps1
-$env:SEED_API_KEY="dummy"
-$env:MUTATION_API_KEY="dummy"
-.\pipeline\run_full_pipeline.ps1 -Mode full -DryRun -DisableSanitizer
-```
-
-Bash:
-
-```bash
-bash pipeline/fetch_cjson.sh
-SEED_API_KEY=dummy MUTATION_API_KEY=dummy ENABLE_SANITIZER=0 DRY_RUN=1 \
-  bash pipeline/run_full_pipeline.sh --mode full
-```
-
-For a live rerun, set real `SEED_API_KEY` and `MUTATION_API_KEY`, confirm
-Clang/LLVM is installed, and run the full pipeline command in the next section.
-Live reruns are stochastic and may differ from the frozen snapshot.
 
 ## Quick Start
 
@@ -434,7 +392,154 @@ reruns. The frozen files under `repro_artifacts/illustrative/` summarize the
 illustrative `cJSON_Parse` run without requiring users to re-query the original
 LLM endpoints.
 
-To refresh the illustrative release snapshot from a local runtime directory:
+To rerun the bundled illustrative snapshot from scratch, refresh three pieces
+in order:
+
+1. the main `full` run under `runtime_data/illustrative_cjson_parse_v1/`,
+2. the `no-risk` Stage~1 comparison run under
+   `runtime_data/illustrative_cjson_parse_v1_no_risk/`, and
+3. the summary exports under `repro_artifacts/illustrative/`.
+
+Fetch the external cJSON input once first:
+
+PowerShell:
+
+```powershell
+.\pipeline\fetch_cjson.ps1
+```
+
+Bash:
+
+```bash
+bash pipeline/fetch_cjson.sh
+```
+
+Set real API keys:
+
+PowerShell:
+
+```powershell
+$env:SEED_API_KEY="<your-seed-provider-key>"
+$env:MUTATION_API_KEY="<your-mutation-provider-key>"
+```
+
+Bash:
+
+```bash
+export SEED_API_KEY="<your-seed-provider-key>"
+export MUTATION_API_KEY="<your-mutation-provider-key>"
+```
+
+Pin the bundled snapshot parameters explicitly:
+
+PowerShell:
+
+```powershell
+$env:COMPILER="clang"
+$env:COVERAGE_TOOL="llvm-cov gcov"
+$env:ENABLE_SANITIZER="1"
+$env:SEED_BASE_URL="https://api.deepseek.com"
+$env:SEED_MODEL="deepseek-v4-flash"
+$env:SEED_ENDPOINT_MODE="chat"
+$env:SEED_SAMPLES_PER_API="8"
+$env:SEED_TARGET_VALID_PER_API="6"
+$env:SEED_NETWORK_RETRIES="2"
+$env:SEED_NETWORK_RETRY_BACKOFF_SEC="2.0"
+$env:MUTATION_PROVIDER="openai_compatible"
+$env:MUTATION_BASE_URL="https://dashscope.aliyuncs.com/compatible-mode/v1"
+$env:MUTATION_MODEL="qwen3-coder-next"
+$env:MUTATION_MAX_VALID="30"
+$env:MUTATION_BATCH_SIZE="4"
+$env:MUTATION_TIMEOUT="1200"
+```
+
+Bash:
+
+```bash
+export COMPILER=clang
+export COVERAGE_TOOL="llvm-cov gcov"
+export ENABLE_SANITIZER=1
+export SEED_BASE_URL=https://api.deepseek.com
+export SEED_MODEL=deepseek-v4-flash
+export SEED_ENDPOINT_MODE=chat
+export SEED_SAMPLES_PER_API=8
+export SEED_TARGET_VALID_PER_API=6
+export SEED_NETWORK_RETRIES=2
+export SEED_NETWORK_RETRY_BACKOFF_SEC=2.0
+export MUTATION_PROVIDER=openai_compatible
+export MUTATION_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
+export MUTATION_MODEL=qwen3-coder-next
+export MUTATION_MAX_VALID=30
+export MUTATION_BATCH_SIZE=4
+export MUTATION_TIMEOUT=1200
+```
+
+Run the main illustrative snapshot:
+
+PowerShell:
+
+```powershell
+.\pipeline\run_full_pipeline.ps1 `
+  -Mode full `
+  -ApiDir ".\api\cJSON" `
+  -RuntimeRoot ".\runtime_data\illustrative_cjson_parse_v1" `
+  -TestApi "cJSON_Parse" `
+  -ApiNameRegex "^cJSON_Parse$"
+```
+
+Bash:
+
+```bash
+API_DIR=api/cJSON \
+RUNTIME_ROOT=runtime_data/illustrative_cjson_parse_v1 \
+TEST_API=cJSON_Parse \
+API_NAME_REGEX='^cJSON_Parse$' \
+bash pipeline/run_full_pipeline.sh --mode full
+```
+
+Run the `no-risk` Stage~1 comparison snapshot:
+
+PowerShell:
+
+```powershell
+$env:MODE="seed"
+$env:API_DIR=".\api\cJSON"
+$env:RUNTIME_ROOT=".\runtime_data\illustrative_cjson_parse_v1_no_risk"
+$env:TEST_API="cJSON_Parse"
+$env:API_NAME_REGEX="^cJSON_Parse$"
+$env:NO_SEED_RISK_CARD="1"
+$env:SEED_SAMPLES_PER_API="1"
+$env:SEED_TARGET_VALID_PER_API="1"
+.\pipeline\run_full_pipeline.ps1
+Remove-Item Env:NO_SEED_RISK_CARD, Env:SEED_SAMPLES_PER_API, Env:SEED_TARGET_VALID_PER_API, Env:MODE, Env:API_DIR, Env:RUNTIME_ROOT, Env:TEST_API, Env:API_NAME_REGEX -ErrorAction SilentlyContinue
+```
+
+Bash:
+
+```bash
+MODE=seed \
+API_DIR=api/cJSON \
+RUNTIME_ROOT=runtime_data/illustrative_cjson_parse_v1_no_risk \
+TEST_API=cJSON_Parse \
+API_NAME_REGEX='^cJSON_Parse$' \
+NO_SEED_RISK_CARD=1 \
+SEED_SAMPLES_PER_API=1 \
+SEED_TARGET_VALID_PER_API=1 \
+bash pipeline/run_full_pipeline.sh
+```
+
+Refresh the exported illustrative summary artifacts:
+
+PowerShell:
+
+```powershell
+python .\pipeline\export_illustrative_assets.py `
+  --runtime-root .\runtime_data\illustrative_cjson_parse_v1 `
+  --api cJSON_Parse `
+  --output-dir .\repro_artifacts\illustrative
+```
+
+Bash:
 
 ```bash
 python pipeline/export_illustrative_assets.py \
@@ -442,6 +547,19 @@ python pipeline/export_illustrative_assets.py \
   --api cJSON_Parse \
   --output-dir repro_artifacts/illustrative
 ```
+
+This sequence refreshes:
+
+- `runtime_data/illustrative_cjson_parse_v1/`
+- `runtime_data/illustrative_cjson_parse_v1_no_risk/`
+- `repro_artifacts/illustrative/` summary files (`stage1_seed_summary.json`,
+  `stage2_mutation_snapshot.json`, `seed_bank.json`, `manifest.*`,
+  `output_tree.txt`)
+
+The checked-in example files under `repro_artifacts/illustrative/`, such as
+`golden_harness.c`, `golden_prompt.txt`, `no_risk_harness.c`, and
+`no_risk_prompt.txt`, are frozen snapshot artifacts and are not regenerated by
+`export_illustrative_assets.py`.
 
 Live LLM reruns are not guaranteed to be bit-for-bit deterministic. Outputs can
 change with model versions, endpoint behavior, sampling, network retries, and
@@ -481,8 +599,8 @@ Their Zenodo artifact is available at https://zenodo.org/records/7978832. See
 
 ## License
 
-The RALFuzz software distribution is released under the MIT License. See
-`LICENSE`.
+The RALFuzz contributors' original software contributions are released under
+the MIT License. See `LICENSE`.
 
 Because this project is a modified derivative of the upstream TitanFuzz
 artifact, redistribution should preserve attribution to both the original
@@ -500,6 +618,14 @@ this RALFuzz repository or accompanying software article.
   author = {Deng, Yinlin and Xia, Chunqiu Steven and Peng, Haoran and Yang, Chenyuan and Zhang, Lingming},
   booktitle = {Proceedings of the 32nd ACM SIGSOFT International Symposium on Software Testing and Analysis},
   year = {2023}
+}
+
+@software{zhou2026ralfuzz,
+  title = {RALFuzz},
+  author = {Zhou, Jinyu and Zhu, Zitong and Xiong, Yuqi and Li, Zhijie and Wu, Jianxi},
+  version = {v0.1.0},
+  year = {2026},
+  doi = {10.5281/zenodo.20116397}
 }
 ```
 

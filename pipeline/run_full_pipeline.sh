@@ -48,12 +48,12 @@ if [[ "${MODE}" == "full" || "${MODE}" == "mutation" ]]; then
 fi
 
 if [[ "${RUN_SEED}" == "1" && "${SEED_BASE_URL}" == https://api.deepseek.com* && -z "${SEED_API_KEY}" ]]; then
-  echo "Missing seed API key. Set SEED_API_KEY (or DEEPSEEK_API_KEY / OPENAI_API_KEY)." >&2
+  echo "Missing seed API key. Set SEED_API_KEY." >&2
   exit 2
 fi
 
 if [[ "${RUN_MUTATION}" == "1" ]] && [[ "${MUTATION_PROVIDER}" == "openai_compatible" || "${MUTATION_PROVIDER}" == "deepseek" ]] && [[ -z "${MUTATION_API_KEY}" ]]; then
-  echo "Missing mutation API key. Set MUTATION_API_KEY (or DASHSCOPE_API_KEY / QWEN_API_KEY / LLM_API_KEY)." >&2
+  echo "Missing mutation API key. Set MUTATION_API_KEY." >&2
   exit 2
 fi
 

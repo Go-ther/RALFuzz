@@ -25,9 +25,10 @@ The upstream artifact is distributed under the Creative Commons Attribution
 4.0 International License (CC BY 4.0):
 https://creativecommons.org/licenses/by/4.0/
 
-The RALFuzz software distribution is released under the MIT License. The
-upstream TitanFuzz attribution above is retained to acknowledge the derivative
-relationship and the license terms of the upstream artifact.
+The RALFuzz contributors' original software contributions are released under
+the MIT License. The upstream TitanFuzz attribution above is retained to
+acknowledge the derivative relationship and the license terms of the upstream
+artifact.
 
 This repository includes substantial modifications, extensions, and
 reorganization relative to the upstream artifact. Any errors, omissions, or
