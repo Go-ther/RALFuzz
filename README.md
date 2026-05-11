@@ -481,8 +481,8 @@ Their Zenodo artifact is available at https://zenodo.org/records/7978832. See
 
 ## License
 
-The RALFuzz software distribution is released under the MIT License. See
-`LICENSE`.
+The RALFuzz contributors' original software contributions are released under
+the MIT License. See `LICENSE`.
 
 Because this project is a modified derivative of the upstream TitanFuzz
 artifact, redistribution should preserve attribution to both the original
