@@ -58,7 +58,7 @@ docker compose -f docker/demo/docker-compose.yml --env-file docker/demo/.env.llm
 |----------|----------|
 | `mutation/`, `seed_generation/` | `runtime_data/` experiment outputs |
 | `pipeline/run_full_pipeline.{py,sh}`, `fetch_cjson.sh` | Batch scripts (`run_baseline_*`, `run_downstream_*`, …) |
-| `repro_artifacts/illustrative/` | `docker/compare/` (OSS-Fuzz-Gen baseline env) |
+| `repro_artifacts/illustrative/` | External-tool comparison environments |
 | cJSON v1.7.19 (baked at build) | `api/libpng_core`, `api/zlib_core`, `api/libucl_core` |
 | Clang 18, Python 3.11, slim deps | `torch` / `transformers` (remote LLM mode only) |
 
@@ -67,11 +67,10 @@ docker compose -f docker/demo/docker-compose.yml --env-file docker/demo/.env.llm
 After validation, tag and push for Metadata table C3, e.g.:
 
 ```bash
-docker tag ralfuzz-demo:latest ghcr.io/go-ther/ralfuzz-demo:v0.1.1
-docker push ghcr.io/go-ther/ralfuzz-demo:v0.1.1
+docker tag ralfuzz-demo:latest ghcr.io/go-ther/ralfuzz-demo:v0.1.2
+docker push ghcr.io/go-ther/ralfuzz-demo:v0.1.2
 ```
 
 ## Related
 
 - Host workflow and frozen snapshot details: [README.md](../../README.md)
-- OSS-Fuzz-Gen comparison experiments: [docker/compare/README.md](../compare/README.md)

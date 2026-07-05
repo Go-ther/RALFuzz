@@ -729,13 +729,13 @@ this RALFuzz repository or accompanying software article.
 @software{zhou2026ralfuzz,
   title = {RALFuzz},
   author = {Zhou, Jinyu and Zhu, Zitong and Xiong, Yuqi and Li, Zhijie and Wu, Jianxi},
-  version = {v0.1.1},
+  version = {v0.1.2},
   year = {2026},
-  doi = {10.5281/zenodo.20116397}
+  url = {https://github.com/Go-ther/RALFuzz/tree/v0.1.2}
 }
 ```
 
-The DOI above archives the `v0.1.1` preliminary snapshot. A follow-up archived
-version that also bundles the Docker reproducibility capsule will be published
-once it is finalized, and this section will be updated with that release's
-version and DOI.
+The DOI badge above archives the earlier `v0.1.1` preliminary snapshot. The
+`v0.1.2` source tag adds the `cJSON_Parse` Docker reproducibility capsule; this
+section will be updated with the corresponding archive DOI after Zenodo
+archival.
