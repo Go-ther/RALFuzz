@@ -1,5 +1,6 @@
 ﻿from __future__ import annotations
 
+import json
 import os
 import pathlib
 import re
@@ -632,4 +633,40 @@ def infer_execution_context(
         neighbor_apis=neighbors,
         short_call_chain_template=chain,
         source_files_scanned=source_files_scanned,
+    )
+
+
+def load_execution_override(api_dirs: Sequence[str], api_name: str) -> dict | None:
+    for raw_dir in api_dirs:
+        path = pathlib.Path(raw_dir) / "ralfuzz.execution.json"
+        if not path.is_file():
+            continue
+        payload = json.loads(path.read_text(encoding="utf-8"))
+        entry = payload.get(api_name)
+        if isinstance(entry, dict):
+            return entry
+    return None
+
+
+def apply_execution_override(context: ExecutionContext, override: dict | None) -> ExecutionContext:
+    if not override:
+        return context
+    init_path = list(override.get("init_path") or context.init_path)
+    cleanup_path = list(override.get("cleanup_path") or context.cleanup_path)
+    chain = list(override.get("short_call_chain_template") or context.short_call_chain_template)
+    if not chain:
+        chain = list(context.short_call_chain_template)
+        for name in init_path + cleanup_path:
+            if name not in chain:
+                chain.append(name)
+    neighbors = list(context.neighbor_apis)
+    for name in init_path + cleanup_path:
+        if name not in neighbors:
+            neighbors.append(name)
+    return ExecutionContext(
+        init_path=init_path,
+        cleanup_path=cleanup_path,
+        neighbor_apis=neighbors,
+        short_call_chain_template=chain,
+        source_files_scanned=context.source_files_scanned,
     )

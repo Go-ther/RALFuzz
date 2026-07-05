@@ -20,6 +20,18 @@ Write one standalone C11 harness:
 */
 """
 
+SIGNATURE_ONLY_PROMPT_TEMPLATE = """/*
+Library: {library_name} (version: {library_version})
+Target API: {api_signature}
+Header: <{header}>
+
+Write one standalone C11 harness that calls `{api_name}` at least once.
+- include the header with `#include "{header}"`
+- use `int main(void)` and print a short status line
+- keep the program concise; output C source only
+*/
+"""
+
 
 @dataclass
 class ApiSpec:

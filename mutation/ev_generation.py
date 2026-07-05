@@ -101,7 +101,9 @@ def generate_loop(args, model, target_adapter, guidance, full_api_list, original
     crashes = []
     round_id = 0
     stagnation_rounds = 0
-    while (max_valid < 0 or num_valid < max_valid) and sum(total_run_time) < args.timeout:
+    while (max_valid < 0 or num_valid < max_valid) and sum(total_run_time) < args.timeout and (
+        int(getattr(args, "max_rounds", 0) or 0) <= 0 or round_id < int(args.max_rounds)
+    ):
         logger.logo("--- Round : {} ---".format(round_id))
         start_time_total = time.time()
         round_valid = 0
@@ -409,12 +411,23 @@ def main():
     parser.add_argument("--test-timeout", dest="test_timeout", type=int, default=10)
     parser.add_argument("--enable-sanitizer", dest="enable_sanitizer", action="store_true", default=False)
     parser.add_argument("--max_stagnation_rounds", type=int, default=25)
+    parser.add_argument("--max_rounds", type=int, default=0, help="Stop after this many mutation rounds (0 disables).")
+    parser.add_argument("--mutation-signature-only-prompt", action="store_true", default=False)
+    parser.add_argument("--mutation-no-execution-context", action="store_true", default=False)
+    parser.add_argument("--mutation-no-risk-context", action="store_true", default=False)
     args = parser.parse_args()
     args.compiler = normalize_clang_compiler(args.compiler, source="mutation --compiler")
     configure_clang_environment(compiler=args.compiler, enable_sanitizer=args.enable_sanitizer)
 
     package_root = Path(__file__).resolve().parent
-    target_adapter = create_target_adapter(args.target, package_root)
+    target_adapter = create_target_adapter(
+        args.target,
+        package_root,
+        default_target_root=args.target_root,
+        include_execution_context=not args.mutation_no_execution_context,
+        include_risk_context=not args.mutation_no_risk_context,
+        signature_only_prompt=args.mutation_signature_only_prompt,
+    )
     args.target_root = str(target_adapter.resolve_target_root(args.target_root))
     target_adapter.ensure_prepared(args.target_root)
     if args.seedfolder is None:

@@ -2,7 +2,7 @@
 
 from typing import List, Sequence
 
-from seed_types import ApiSpec, ExecutionContext, RiskContext
+from seed_types import DEFAULT_PROMPT_TEMPLATE, SIGNATURE_ONLY_PROMPT_TEMPLATE, ApiSpec, ExecutionContext, RiskContext
 
 RISK_BOUNDARY_LITERAL_HINTS: Sequence[str] = ("NULL", "\"\"", "-1", "INT_MAX", "INT_MIN", "SIZE_MAX")
 
@@ -47,6 +47,10 @@ def build_risk_constraint_lines(spec: ApiSpec, risk_context: RiskContext, min_ma
     return lines
 
 
+def empty_execution_context() -> ExecutionContext:
+    return ExecutionContext()
+
+
 def build_prompt(
     template: str,
     library_name: str,
@@ -55,11 +59,19 @@ def build_prompt(
     execution_context: ExecutionContext,
     risk_context: RiskContext,
     include_risk_card: bool = True,
+    include_execution_context: bool = True,
+    signature_only_prompt: bool = False,
     risk_prompt_hardening: bool = True,
     risk_min_marker_kinds: int = 2,
     risk_require_boundary_value: bool = True,
     risk_require_high_risk_neighbor: bool = True,
 ) -> str:
+    if signature_only_prompt:
+        template = SIGNATURE_ONLY_PROMPT_TEMPLATE
+        include_risk_card = False
+        include_execution_context = False
+        risk_prompt_hardening = False
+    effective_execution_context = execution_context if include_execution_context else empty_execution_context()
     effective_risk_context = risk_context if include_risk_card else RiskContext()
     rendered = template.format(
         library_name=library_name,
@@ -67,10 +79,10 @@ def build_prompt(
         header=spec.header,
         api_signature=spec.api_signature,
         api_name=spec.api_name,
-        execution_init_path=inline_items(execution_context.init_path, limit=2),
-        execution_cleanup_path=inline_items(execution_context.cleanup_path, limit=2),
-        execution_neighbor_apis=inline_items(execution_context.neighbor_apis, limit=3),
-        execution_short_call_chain=" -> ".join(execution_context.short_call_chain_template) or spec.api_name,
+        execution_init_path=inline_items(effective_execution_context.init_path, limit=2),
+        execution_cleanup_path=inline_items(effective_execution_context.cleanup_path, limit=2),
+        execution_neighbor_apis=inline_items(effective_execution_context.neighbor_apis, limit=3),
+        execution_short_call_chain=" -> ".join(effective_execution_context.short_call_chain_template) or spec.api_name,
         risk_level=effective_risk_context.risk_level,
         risk_tags=inline_items(effective_risk_context.risk_tags, limit=3),
         risk_boundary_hints=compact_hints(effective_risk_context.boundary_hints, limit=2),
@@ -82,10 +94,10 @@ def build_prompt(
     low = rendered.lower()
     if "markdown" not in low and "code fence" not in low:
         rendered += "\n/* Output plain C source only. Do not use markdown code fences. */\n"
-    if execution_context.cleanup_path:
+    if include_execution_context and effective_execution_context.cleanup_path:
         rendered += (
             "\n/* Lifecycle note: because cleanup is listed, make sure at least one executed path "
-            f"calls `{execution_context.cleanup_path[0]}` after `{spec.api_name}`. */\n"
+            f"calls `{effective_execution_context.cleanup_path[0]}` after `{spec.api_name}`. */\n"
         )
     if include_risk_card and risk_prompt_hardening:
         risk_lines = build_risk_constraint_lines(

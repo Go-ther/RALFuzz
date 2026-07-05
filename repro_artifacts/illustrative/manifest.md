@@ -1,20 +1,20 @@
 # Illustrative cJSON Parse Artifact Manifest
 
-- Exported at UTC: `2026-05-08T15:13:06.672097+00:00`
+- Exported at UTC: `2026-06-28T10:58:49.636840+00:00`
 - Runtime root: `E:\paper\RALFuzz\runtime_data\illustrative_cjson_parse_v1`
 - API: `cJSON_Parse`
 
 ## Key Stage 2 Counts
 
-- candidates: `84`
-- valid: `32`
-- duplicate: `41`
-- exception: `11`
+- candidates: `90`
+- valid: `30`
+- duplicate: `52`
+- exception: `8`
 - crash: `0`
 - notarget: `0`
 - hangs: `0`
-- unique behavior signatures: `12`
-- wall-clock seconds: `165.40140175819397`
+- unique behavior signatures: `8`
+- wall-clock seconds: `113.44906711578369`
 
 ## Files
 

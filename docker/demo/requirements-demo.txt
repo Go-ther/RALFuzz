@@ -1,0 +1,4 @@
+requests
+numpy
+pyparsing
+junit-xml

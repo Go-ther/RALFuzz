@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+import shlex
 from pathlib import Path
 
 from mutation.metadata import ApiSpec, build_library_metadata, render_seed_context
@@ -15,11 +17,17 @@ class GenericCTargetAdapter(TargetAdapter):
         package_root: str | Path,
         *,
         default_target_root: str | Path | None = None,
+        include_execution_context: bool = True,
+        include_risk_context: bool = True,
+        signature_only_prompt: bool = False,
     ) -> None:
         super().__init__(package_root)
         if default_target_root is not None:
             self.default_target_root = Path(default_target_root).resolve()
         self._seed_root: Path | None = None
+        self.include_execution_context = include_execution_context
+        self.include_risk_context = include_risk_context
+        self.signature_only_prompt = signature_only_prompt
 
     def _prepare_impl(self, target_root: Path) -> None:
         self.metadata = build_library_metadata(
@@ -67,6 +75,49 @@ class GenericCTargetAdapter(TargetAdapter):
         assert self.metadata is not None
         return self.metadata.include_dirs
 
+    def _prebuilt_link_config(self) -> dict[str, str]:
+        self.ensure_prepared()
+        assert self.metadata is not None
+        link_path = self.metadata.target_root / "prebuilt" / "link.json"
+        if not link_path.is_file():
+            return {}
+        loaded = json.loads(link_path.read_text(encoding="utf-8"))
+        return {
+            "extra_cflags": str(loaded.get("extra_cflags", "")).strip(),
+            "extra_ldflags": str(loaded.get("extra_ldflags", "")).strip(),
+        }
+
+    def get_common_cflags(
+        self,
+        enable_coverage: bool = False,
+        enable_sanitizer: bool = False,
+    ) -> list[str]:
+        flags = super().get_common_cflags(
+            enable_coverage=enable_coverage,
+            enable_sanitizer=enable_sanitizer,
+        )
+        extra_cflags = self._prebuilt_link_config().get("extra_cflags", "")
+        if extra_cflags:
+            flags.extend(shlex.split(extra_cflags))
+        return flags
+
+    def get_link_flags(
+        self,
+        enable_coverage: bool = False,
+        enable_sanitizer: bool = False,
+    ) -> list[str]:
+        flags: list[str] = []
+        extra_ldflags = self._prebuilt_link_config().get("extra_ldflags", "")
+        if extra_ldflags:
+            flags.extend(shlex.split(extra_ldflags))
+        flags.extend(
+            super().get_link_flags(
+                enable_coverage=enable_coverage,
+                enable_sanitizer=enable_sanitizer,
+            )
+        )
+        return flags
+
     def get_focus_files(self, target_root: Path) -> list[Path]:
         self.ensure_prepared(target_root)
         assert self.metadata is not None
@@ -105,16 +156,26 @@ class GenericCTargetAdapter(TargetAdapter):
         if api not in self.metadata.api_specs:
             return "Task 6: keep resource ownership valid and preserve the target API call."
         seed_context = self.metadata.build_seed_context(api)
+        if self.signature_only_prompt:
+            return (
+                "Task: preserve the target API call and produce valid C code.\n"
+                "Context:\n"
+                + render_seed_context(seed_context, signature_only=True)
+            )
         guidance = (
             "Task 6: preserve init and cleanup correctness while keeping the target API call.\n"
             "Task 7: prefer 1-2 boundary cases from the risk hints.\n"
             "Task 8: if high-risk neighbor APIs exist, you may add one short neighbor call when it fits naturally; prefer an executed call from main or from a helper that main invokes, but skip it rather than forcing an awkward chain.\n"
             "Task 9: do not duplicate includes, do not leave unused helpers, do not copy RALFUZZ prompt comments into the final code, and do not call delete/free twice on the same pointer.\n"
             "Context:\n"
-            + render_seed_context(seed_context)
+            + render_seed_context(
+                seed_context,
+                include_execution_context=self.include_execution_context,
+                include_risk_context=self.include_risk_context,
+            )
         )
         neighbor_examples = self._render_neighbor_examples(api)
-        if neighbor_examples:
+        if neighbor_examples and self.include_execution_context and self.include_risk_context:
             guidance += "\nNeighbor call examples:\n" + "\n".join(neighbor_examples)
         return guidance
 
@@ -138,6 +199,12 @@ class GenericCTargetAdapter(TargetAdapter):
             return ["root", "item", "item_obj", "result"]
         if "ctx" in lowered_name or "context" in lowered_name:
             return ["ctx", "context", "result"]
+        if "png_ver" in lowered_name or lowered_name.endswith("_ver"):
+            return ["PNG_LIBPNG_VER_STRING", '"1.6.50"', "NULL"]
+        if "error_fn" in lowered_name or "warn_fn" in lowered_name:
+            return ["NULL", "error_handler", "warn_handler"]
+        if "error_ptr" in lowered_name:
+            return ["NULL", "error_ptr", "png_ptr"]
         return ["result", "obj", "ctx"]
 
     def get_mock_function_bank(self) -> list[str]:

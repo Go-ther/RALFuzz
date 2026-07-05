@@ -50,7 +50,8 @@ class RiskGuidance:
         self.depth_finder = DepthFinder(self.api_names)
 
     def extract_harness_state(self, code: str, target_api: str) -> HarnessState:
-        spans = find_call_spans(code, self.api_names)
+        lookup_names = list(dict.fromkeys([target_api, *self.api_names]))
+        spans = find_call_spans(code, lookup_names)
         called_apis = [span.api_name for span in spans]
         call_skeleton = self._build_call_skeleton(called_apis)
         unique_calls, exact_repeats, repeated_apis = self.unique_finder.count(code)

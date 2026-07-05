@@ -87,6 +87,13 @@ class OpenAICompatClient:
     def _is_deepseek_api(self) -> bool:
         return "api.deepseek.com" in self.base_url.lower()
 
+    def _is_dashscope_api(self) -> bool:
+        return "dashscope.aliyuncs.com" in self.base_url.lower()
+
+    def _dashscope_deepseek_disable_thinking(self, payload: Dict) -> None:
+        if self._is_dashscope_api() and self.model.lower().startswith("deepseek-"):
+            payload["enable_thinking"] = False
+
     def _base_root(self) -> str:
         if self.base_url.endswith("/v1"):
             return self.base_url[: -len("/v1")]
@@ -160,6 +167,7 @@ class OpenAICompatClient:
         }
         if self._is_deepseek_api():
             payload["thinking"] = {"type": "disabled"}
+        self._dashscope_deepseek_disable_thinking(payload)
         if n is not None:
             payload["n"] = n
         data = self._post("/v1/chat/completions", payload)

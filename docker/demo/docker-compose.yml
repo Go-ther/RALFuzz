@@ -1,0 +1,22 @@
+# RALFuzz reproducibility capsule (cJSON_Parse illustrative demo).
+#
+# Usage (from repo root):
+#   docker compose -f docker/demo/docker-compose.yml build
+#   docker compose -f docker/demo/docker-compose.yml run --rm demo
+#   docker compose -f docker/demo/docker-compose.yml run --rm demo preflight
+#
+# Optional live rerun (API keys only at runtime — never commit .env.llm):
+#   docker compose -f docker/demo/docker-compose.yml --env-file docker/demo/.env.llm run --rm demo run-live
+
+services:
+  demo:
+    build:
+      context: ../..
+      dockerfile: docker/demo/Dockerfile
+    image: ralfuzz-demo:latest
+    environment:
+      CC: clang-18
+      CXX: clang++-18
+      RALFUZZ_ROOT: /opt/ralfuzz
+    stdin_open: true
+    tty: true

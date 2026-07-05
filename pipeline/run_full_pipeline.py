@@ -98,6 +98,14 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--seed-truncation-retry-max-lines", type=int, default=96)
     parser.add_argument("--seed-truncation-retry-min-marker-kinds", type=int, default=1)
     parser.add_argument("--seed-enforce-init-target-order", action="store_true", default=False)
+    parser.add_argument("--seed-signature-only-prompt", action="store_true", default=False)
+    parser.add_argument("--seed-no-execution-context", action="store_true", default=False)
+    parser.add_argument("--seed-api-spec-file", default=None)
+    parser.add_argument("--seed-risk-cards-file", default=None)
+
+    parser.add_argument("--mutation-signature-only-prompt", action="store_true", default=False)
+    parser.add_argument("--mutation-no-execution-context", action="store_true", default=False)
+    parser.add_argument("--mutation-no-risk-context", action="store_true", default=False)
 
     parser.add_argument(
         "--mutation-llm-provider",
@@ -124,6 +132,20 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--mutation-compile-timeout", type=int, default=20)
     parser.add_argument("--mutation-test-timeout", type=int, default=10)
     parser.add_argument("--mutation-max-stagnation-rounds", type=int, default=25)
+    parser.add_argument("--mutation-max-rounds", type=int, default=0, help="Stop Stage 2 after this many mutation rounds (0 disables).")
+    parser.add_argument(
+        "--emit-fuzz-targets",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="After mutation, emit libFuzzer / AFL++ fuzz harnesses under mutation/fuzz/",
+    )
+    parser.add_argument(
+        "--fuzz-backend",
+        choices=["libfuzzer", "afl", "both"],
+        default="both",
+        help="Fuzz backends to emit when --emit-fuzz-targets is enabled",
+    )
+    parser.add_argument("--fuzz-per-harness", action="store_true", default=False)
     return parser.parse_args()
 
 
@@ -233,8 +255,29 @@ def build_env(
     return env
 
 
+SECRET_FLAGS = {
+    "--api-key",
+    "--llm_api_key",
+    "--seed-api-key",
+    "--mutation-api-key",
+}
+
+
+def redact_command(cmd: list[str]) -> list[str]:
+    redacted = list(cmd)
+    for index, token in enumerate(redacted[:-1]):
+        if token in SECRET_FLAGS:
+            redacted[index + 1] = "<redacted>"
+    for index, token in enumerate(redacted):
+        for flag in SECRET_FLAGS:
+            prefix = f"{flag}="
+            if token.startswith(prefix):
+                redacted[index] = f"{prefix}<redacted>"
+    return redacted
+
+
 def print_command(label: str, cmd: list[str], cwd: Path) -> None:
-    rendered = subprocess.list2cmdline(cmd)
+    rendered = subprocess.list2cmdline(redact_command(cmd))
     print(f"[{label}] cwd={cwd}")
     print(f"[{label}] cmd={rendered}")
 
@@ -393,6 +436,14 @@ def main() -> int:
             seed_cmd.append("--enforce-init-target-order")
         else:
             seed_cmd.append("--no-enforce-init-target-order")
+        if args.seed_signature_only_prompt:
+            seed_cmd.append("--signature-only-prompt")
+        if args.seed_no_execution_context:
+            seed_cmd.append("--no-execution-context")
+        if args.seed_api_spec_file:
+            seed_cmd.extend(["--api-spec-file", args.seed_api_spec_file])
+        if args.seed_risk_cards_file:
+            seed_cmd.extend(["--risk-cards-file", args.seed_risk_cards_file])
         run_command("seed-generation", seed_cmd, seed_generation_dir, env, args.dry_run)
         if not args.dry_run:
             valid_seed_count = count_seed_inputs(seed_fix_dir, args.api)
@@ -470,13 +521,47 @@ def main() -> int:
             "--max_stagnation_rounds",
             str(args.mutation_max_stagnation_rounds),
         ]
+        if args.mutation_max_rounds > 0:
+            mutation_cmd.extend(["--max_rounds", str(args.mutation_max_rounds)])
         if args.enable_sanitizer:
             mutation_cmd.append("--enable-sanitizer")
         if args.mutation_llm_provider != "mock":
             mutation_cmd.extend(["--model_name", args.mutation_model])
         if args.mutation_llm_provider in {"openai_compatible", "deepseek"}:
             mutation_cmd.extend(["--llm_api_base", mutation_api_base, "--llm_api_key", mutation_api_key])
+        if args.mutation_signature_only_prompt:
+            mutation_cmd.append("--mutation-signature-only-prompt")
+        if args.mutation_no_execution_context:
+            mutation_cmd.append("--mutation-no-execution-context")
+        if args.mutation_no_risk_context:
+            mutation_cmd.append("--mutation-no-risk-context")
         run_command("mutation", mutation_cmd, repo_root, env, args.dry_run)
+
+    if run_mutation and args.emit_fuzz_targets and not args.dry_run:
+        if seed_folder_has_inputs(seed_fix_dir, args.api) and mutation_output_dir.is_dir():
+            from pipeline.fuzz_adapter import emit_fuzz_targets
+
+            backends = ["libfuzzer", "afl"] if args.fuzz_backend == "both" else [args.fuzz_backend]
+            try:
+                manifest = emit_fuzz_targets(
+                    mutation_dir=mutation_output_dir,
+                    api_dir=api_dir,
+                    api_name=args.api,
+                    backends=backends,
+                    compiler=args.compiler,
+                    include_dirs=discover_include_dirs(api_dir),
+                    source_files=discover_link_sources(api_dir),
+                    enable_sanitizer=args.enable_sanitizer,
+                    per_harness=args.fuzz_per_harness,
+                )
+                print(
+                    "[fuzz-adapter] emitted fuzz harnesses for api={!r} from {} accepted sources".format(
+                        args.api,
+                        manifest["source_harness_count"],
+                    )
+                )
+            except (FileNotFoundError, KeyError) as exc:
+                print(f"[fuzz-adapter] skipped: {exc}")
 
     print(f"[done] mode: {args.mode}")
     print(f"[done] runtime root: {runtime_root}")

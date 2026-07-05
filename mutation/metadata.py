@@ -373,6 +373,95 @@ def _parse_prototype(statement: str) -> tuple[str, str, str, list[str], list[str
     return api_name, ret, candidate.rstrip(";"), arg_specs, arg_names, arg_types
 
 
+def _looks_like_macro_api(api_name: str) -> bool:
+    if api_name in CONTROL_KEYWORDS:
+        return True
+    upper = api_name.upper()
+    if api_name == upper and any(
+        token in upper for token in ("EXPORT", "REMOVED", "EXTERN", "IMPORT", "CALL", "DEFINE")
+    ):
+        return True
+    return False
+
+
+def _filter_header_api_specs(specs: dict[str, ApiSpec]) -> dict[str, ApiSpec]:
+    return {api_name: spec for api_name, spec in specs.items() if not _looks_like_macro_api(api_name)}
+
+
+def _api_spec_from_signature(api_name: str, signature: str, header: str) -> ApiSpec | None:
+    candidate = signature.strip()
+    if not candidate:
+        return None
+    if not candidate.endswith(";"):
+        candidate += ";"
+    parsed = _parse_prototype(candidate)
+    if parsed is None:
+        return None
+    parsed_name, ret, _, arg_specs, arg_names, arg_types = parsed
+    resolved_name = api_name or parsed_name
+    return ApiSpec(
+        api=resolved_name,
+        ret=ret,
+        args=arg_specs,
+        arg_names=arg_names,
+        arg_types=arg_types,
+        header=header,
+    )
+
+
+def _load_explicit_api_specs(target_root: Path, manifest: dict[str, object]) -> dict[str, ApiSpec]:
+    spec_file = manifest.get("api_specs_file")
+    if spec_file:
+        path = target_root / str(spec_file)
+    else:
+        path = target_root / "apis.txt"
+    if not path.exists():
+        return {}
+
+    default_header = "api.h"
+    public_headers = manifest.get("public_headers")
+    if isinstance(public_headers, list) and public_headers:
+        default_header = str(public_headers[0])
+
+    specs: dict[str, ApiSpec] = {}
+    for line in path.read_text(encoding="utf-8", errors="replace").splitlines():
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        parts = [part.strip() for part in stripped.split("\t")]
+        api_name: str | None = None
+        signature: str | None = None
+        header = default_header
+        if len(parts) == 1:
+            one = parts[0]
+            if "(" in one:
+                signature = one
+                parsed = _parse_prototype(one if one.endswith(";") else one + ";")
+                api_name = parsed[0] if parsed is not None else None
+            else:
+                api_name = one
+        elif len(parts) == 2:
+            left, right = parts
+            if "(" in left and "(" not in right:
+                signature = left
+                parsed = _parse_prototype(left if left.endswith(";") else left + ";")
+                api_name = parsed[0] if parsed is not None else None
+                header = right or default_header
+            else:
+                api_name = left
+                signature = right
+        else:
+            api_name = parts[0]
+            signature = parts[1]
+            header = parts[2] if parts[2] else default_header
+        if not api_name:
+            continue
+        spec = _api_spec_from_signature(api_name, signature or "", header)
+        if spec is not None:
+            specs[api_name] = spec
+    return specs
+
+
 def _discover_public_headers(target_root: Path, manifest: dict[str, object]) -> list[Path]:
     headers_override = manifest.get("public_headers")
     if isinstance(headers_override, list) and headers_override:
@@ -878,7 +967,9 @@ def build_library_metadata(
     public_headers = _discover_public_headers(target_root, manifest)
     source_files = _discover_source_files(target_root, manifest)
     include_dirs = _discover_include_dirs(target_root, public_headers, manifest)
-    api_specs = _collect_api_specs(target_root, public_headers)
+    header_specs = _filter_header_api_specs(_collect_api_specs(target_root, public_headers))
+    explicit_specs = _load_explicit_api_specs(target_root, manifest)
+    api_specs = {**header_specs, **explicit_specs}
     forward, reverse, function_to_source = _build_call_graph(api_specs, source_files)
     cg_scores = _compute_cg_scores(api_specs, forward, reverse)
 
@@ -925,30 +1016,46 @@ def build_library_metadata(
     return metadata
 
 
-def render_seed_context(seed_context: SeedContext) -> str:
+def render_seed_context(
+    seed_context: SeedContext,
+    *,
+    include_execution_context: bool = True,
+    include_risk_context: bool = True,
+    signature_only: bool = False,
+) -> str:
+    if signature_only:
+        return "\n".join(
+            [
+                "Library: {} ({})".format(seed_context.library_name, seed_context.library_version),
+                "Target signature: {}".format(seed_context.api_signature),
+                'Primary header: #include "{}"'.format(seed_context.header),
+            ]
+        )
     lines = [
         "Library: {} ({})".format(seed_context.library_name, seed_context.library_version),
         "Target signature: {}".format(seed_context.api_signature),
         'Primary header: #include "{}"'.format(seed_context.header),
     ]
-    if seed_context.execution_init_path:
-        lines.append("Init candidates: {}".format(", ".join(seed_context.execution_init_path)))
-    if seed_context.execution_cleanup_path:
-        lines.append("Cleanup candidates: {}".format(", ".join(seed_context.execution_cleanup_path)))
-    if seed_context.execution_neighbor_apis:
-        lines.append("Neighbor APIs: {}".format(", ".join(seed_context.execution_neighbor_apis)))
-    if seed_context.execution_short_call_chain:
-        chain_str = [" -> ".join(chain) for chain in seed_context.execution_short_call_chain]
-        lines.append("Short call chains: {}".format("; ".join(chain_str)))
-    lines.append("Risk level: {:.2f}".format(seed_context.risk_level))
-    if seed_context.risk_tags:
-        lines.append("Risk tags: {}".format(", ".join(seed_context.risk_tags)))
-    if seed_context.risk_boundary_hints:
-        lines.append("Boundary hints: {}".format(", ".join(seed_context.risk_boundary_hints)))
-    if seed_context.risk_high_risk_neighbors:
-        lines.append("High-risk neighbors: {}".format(", ".join(seed_context.risk_high_risk_neighbors)))
-    if seed_context.risk_history_summary:
-        lines.append("Risk summary: {}".format(seed_context.risk_history_summary))
+    if include_execution_context:
+        if seed_context.execution_init_path:
+            lines.append("Init candidates: {}".format(", ".join(seed_context.execution_init_path)))
+        if seed_context.execution_cleanup_path:
+            lines.append("Cleanup candidates: {}".format(", ".join(seed_context.execution_cleanup_path)))
+        if seed_context.execution_neighbor_apis:
+            lines.append("Neighbor APIs: {}".format(", ".join(seed_context.execution_neighbor_apis)))
+        if seed_context.execution_short_call_chain:
+            chain_str = [" -> ".join(chain) for chain in seed_context.execution_short_call_chain]
+            lines.append("Short call chains: {}".format("; ".join(chain_str)))
+    if include_risk_context:
+        lines.append("Risk level: {:.2f}".format(seed_context.risk_level))
+        if seed_context.risk_tags:
+            lines.append("Risk tags: {}".format(", ".join(seed_context.risk_tags)))
+        if seed_context.risk_boundary_hints:
+            lines.append("Boundary hints: {}".format(", ".join(seed_context.risk_boundary_hints)))
+        if seed_context.risk_high_risk_neighbors:
+            lines.append("High-risk neighbors: {}".format(", ".join(seed_context.risk_high_risk_neighbors)))
+        if seed_context.risk_history_summary:
+            lines.append("Risk summary: {}".format(seed_context.risk_history_summary))
     return "\n".join(lines)
 
 

@@ -1,0 +1,48 @@
+# Shrink build context for docker/demo (build from repo root).
+# The demo Dockerfile COPYs only mutation/, seed_generation/, three pipeline
+# launchers, repro_artifacts/illustrative/, and docker/demo/.
+
+.git/
+**/__pycache__/
+**/*.py[cod]
+.venv/
+venv/
+
+# Not copied into the demo image
+runtime_data/
+docs/
+RALFuzz-论文/
+external/
+README.md
+NOTICE
+LICENSE
+requirements.txt
+*.pdf
+*.zip
+*.tar.gz
+
+# cJSON is fetched inside the image at build time
+api/
+
+# Local experiment Docker environments (only docker/demo is published)
+docker/compare/
+docker/ogharn/
+docker/llm4fdg/
+docker/**/.env
+docker/**/.env.llm
+
+# Demo copies three pipeline files only
+pipeline/*
+!pipeline/run_full_pipeline.py
+!pipeline/run_full_pipeline.sh
+!pipeline/fetch_cjson.sh
+
+# Demo copies docker/demo/ only
+docker/*
+!docker/demo/
+!docker/demo/**
+
+# Windows / editor noise
+Thumbs.db
+.DS_Store
+**/*Zone.Identifier

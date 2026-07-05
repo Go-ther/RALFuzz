@@ -49,43 +49,43 @@
         "seed_id": 1,
         "from_completion_id": 1,
         "file": "E:\\paper\\RALFuzz\\runtime_data\\illustrative_cjson_parse_v1\\seed_generation\\fix\\cJSON_Parse\\1.c",
-        "skeleton_key": "cJSON_Parse|none|cJSON_Delete|cJSON_Delete|zero,one,null,empty_str,int_min|deep-structure",
-        "text_hash": "6b79840a30b556b16275f6c53c05e690c4ffe9887eaa759a097b13a37da4f693"
+        "skeleton_key": "cJSON_Parse|none|cJSON_Delete|cJSON_Delete|zero,one,minus_one,null,empty_str|numeric-extreme,malformed-input,deep-structure,pointer-aliasing",
+        "text_hash": "b1491088b9b69a801681167facaeb84321601344106073ab5f05b9d1de174f43"
       },
       {
         "seed_id": 2,
         "from_completion_id": 2,
         "file": "E:\\paper\\RALFuzz\\runtime_data\\illustrative_cjson_parse_v1\\seed_generation\\fix\\cJSON_Parse\\2.c",
-        "skeleton_key": "cJSON_Parse|none|cJSON_Delete|cJSON_Delete|zero,one,minus_one,null,empty_str|numeric-extreme,binary-payload,deep-structure",
-        "text_hash": "7f9a58d63f5ea1c8f94ed784fb5ba29cd72614bdb6ae149a2a5cf8aa38eada63"
+        "skeleton_key": "cJSON_Parse|none|cJSON_Delete|cJSON_Delete|zero,one,null,empty_str,int_min|deep-structure",
+        "text_hash": "898384c852a995731816ee18b1a4c952e59753f2e2f68be3699ff05d917dba20"
       },
       {
         "seed_id": 3,
         "from_completion_id": 3,
         "file": "E:\\paper\\RALFuzz\\runtime_data\\illustrative_cjson_parse_v1\\seed_generation\\fix\\cJSON_Parse\\3.c",
-        "skeleton_key": "cJSON_Parse|none|cJSON_Delete|cJSON_Delete|zero,one,null,empty_str,int_max,int_min|numeric-extreme,malformed-input,binary-payload,deep-structure",
-        "text_hash": "f3442357af060cac2d671ee67034e80572451a21e398dba755ecdceecba17c78"
+        "skeleton_key": "cJSON_Parse|none|cJSON_Delete|cJSON_Delete|zero,one,minus_one,null,empty_str|numeric-extreme,deep-structure",
+        "text_hash": "f9620cda9d48003d4de4624cc5f97c15f20d570dee680d4d3b19f1d96bbbe3b4"
       },
       {
         "seed_id": 4,
         "from_completion_id": 4,
         "file": "E:\\paper\\RALFuzz\\runtime_data\\illustrative_cjson_parse_v1\\seed_generation\\fix\\cJSON_Parse\\4.c",
-        "skeleton_key": "cJSON_Parse|none|cJSON_Delete|cJSON_Delete|zero,one,null,empty_str,int_max|binary-payload,deep-structure",
-        "text_hash": "077def592afb312baac9e9f7dd4869f6a56bf481b479c1dc0224dd1b7ba78556"
+        "skeleton_key": "cJSON_Parse|none|cJSON_Delete|cJSON_Delete|zero,one,null,empty_str,int_max|deep-structure,pointer-aliasing",
+        "text_hash": "faa5091874a1a472821bfcaf7e583078d9ca4599c4513c396ca6371cf8e8a055"
       },
       {
         "seed_id": 5,
         "from_completion_id": 5,
         "file": "E:\\paper\\RALFuzz\\runtime_data\\illustrative_cjson_parse_v1\\seed_generation\\fix\\cJSON_Parse\\5.c",
-        "skeleton_key": "cJSON_Parse|none|cJSON_Delete|cJSON_Delete|zero,one,null,empty_str,int_max|deep-structure",
-        "text_hash": "ca8a0940a242abcb8d0ab87172b0dd341944ce61c6e40d733051034c870d1555"
+        "skeleton_key": "cJSON_Parse|none|cJSON_Delete|cJSON_Delete|zero,one,minus_one,null,empty_str,int_max|numeric-extreme,binary-payload,deep-structure,pointer-aliasing",
+        "text_hash": "f970e4c871f5a54977d7120e8cffad68f2c8dfc3b24bb0724c3167ee14c58b9c"
       },
       {
         "seed_id": 6,
         "from_completion_id": 6,
         "file": "E:\\paper\\RALFuzz\\runtime_data\\illustrative_cjson_parse_v1\\seed_generation\\fix\\cJSON_Parse\\6.c",
-        "skeleton_key": "cJSON_Parse|none|cJSON_Delete|cJSON_Delete|zero,one,null,empty_str,int_max|binary-payload,deep-structure",
-        "text_hash": "51f6301113ef26120075b374542e29233b3b495ce3d02b92d5de212135f922fd"
+        "skeleton_key": "cJSON_Parse|none|cJSON_Delete|cJSON_Delete|zero,one,minus_one,null,empty_str,int_max,int_min|numeric-extreme,binary-payload,deep-structure",
+        "text_hash": "bd62cc917c50b1da6553b2e519840285e4d272a3b03c4ea4ea3537545f7a9930"
       }
     ]
   }

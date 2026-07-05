@@ -39,7 +39,7 @@ programs to native C library harnesses. Major changes include:
 - target-API reachability and cleanup-path checks
 - optional sanitizer validation
 - behaviour-signature and risk-aware mutation feedback
-- structured seed-bank, mutation, and snapshot artifacts
+- structured seed-corpus, mutation, and snapshot artifacts
 
 ## Repository Layout
 
@@ -310,6 +310,97 @@ Useful overrides:
 If the library needs extra include or link flags, use the Python entry point
 with `--extra-cflags` and `--extra-ldflags`.
 
+## Target Metadata and Extension Notes
+
+### API discovery and target metadata
+
+For simple libraries, `--auto-api-dir` plus `--auto-api-name-regex` is enough:
+RALFuzz scans headers, extracts visible prototypes, and builds prompts for the
+matching API names. For libraries that need explicit headers, source files, or
+dependency sources, add a `ralfuzz.target.json` file under the API directory.
+
+Minimal example:
+
+```json
+{
+  "api_specs_file": "apis.txt",
+  "public_headers": ["png.h"],
+  "include_dirs": [".", "../zlib_core"],
+  "sources": [
+    "png.c",
+    "pngread.c",
+    "../zlib_core/adler32.c"
+  ]
+}
+```
+
+The optional `apis.txt` file gives the adapter a stable API signature source.
+Each line should contain the API name, signature, and header separated by tabs.
+See `api/libpng_core/ralfuzz.target.json` and
+`api/libucl_core/ralfuzz.target.json` for complete examples with dependency
+sources.
+
+### Risk-card customization
+
+Seed generation infers a lightweight risk card from the API name, signature,
+types, neighboring calls, and cleanup hints. You can override or extend that
+card with `--seed-risk-cards-file` in the full pipeline or `--risk-cards-file`
+in `seed_generation/generate_c_seeds.py`.
+
+Example:
+
+```json
+{
+  "png_create_read_struct": {
+    "risk_level": "high",
+    "risk_tags": [
+      "resource-lifecycle",
+      "pointer-lifetime",
+      "version-string"
+    ],
+    "boundary_hints": [
+      "Use PNG_LIBPNG_VER_STRING for normal successful creation.",
+      "Release successful handles with png_destroy_read_struct(&png_ptr, NULL, NULL)."
+    ],
+    "history_summary": "libpng read structs require a compatible version string and explicit destroy cleanup.",
+    "high_risk_neighbors": ["png_destroy_read_struct"]
+  }
+}
+```
+
+Supported override fields are `risk_level`, `risk_tags`, `boundary_hints`,
+`history_summary`, and `high_risk_neighbors`. Overrides are merged with the
+automatically inferred card for the matching API name. To disable risk cards
+entirely for an ablation or diagnosis run, pass `--no-seed-risk-card` to the
+full pipeline, or set `NO_SEED_RISK_CARD=1` when using the shell wrappers.
+
+### Adding mutation strategies
+
+Stage 2 mutation is organized around `replace_type` values. The built-in set is
+registered in `mutation/seed_pool.py` and currently includes:
+
+- `argument`
+- `method`
+- `neighbor`
+- `prefix`
+- `prefix-argument`
+- `suffix`
+- `suffix-argument`
+
+To add a new source-level mutation strategy:
+
+1. Implement the infill transformation in `mutation/c_mutators.py`, usually as
+   a new branch in `SnippetInfill.add_infill()` or as a helper called from it.
+2. Register the new `replace_type` in `mutation/seed_pool.py` inside
+   `GA._init_mutator()` and route it in `GA._make_infill()`.
+3. If the strategy should receive risk-aware guidance, add scoring logic for
+   the new `replace_type` in `mutation/guidance.py`.
+4. Run the mutation stage with `--use_single_mutator --replace_type <name>` for
+   a smoke test before adding it to the default `all` mutator set.
+
+The scheduler (`--mutator_selection_algo random|heuristic|epsgreedy|ucb|ts`)
+will track the new strategy once it appears in the active `replace_type` list.
+
 ## Direct Stage Commands
 
 Seed generation can also be run directly after fetching `api/cJSON/`:
@@ -369,7 +460,7 @@ runtime_data/illustrative_cjson_parse_v1/
     raw/                Prompt/completion attempts
     fix/                Validated seed harnesses
     outputs.json        Per-API seed-generation records
-    seed_bank.json      Validated seed bank
+    seed_bank.json      Seed-corpus metadata file
     summary.json        Aggregate seed-generation summary
   mutation/
     seed/               Seeds imported into mutation
@@ -384,6 +475,21 @@ runtime_data/illustrative_cjson_parse_v1/
 
 The full pipeline clears selected stage directories unless `--resume` or
 `-Resume` is used.
+
+## Docker reproducibility capsule
+
+A minimal **offline** Docker demo verifies the illustrative `cJSON_Parse`
+snapshot (no LLM API keys required). See [docker/demo/README.md](docker/demo/README.md).
+
+```bash
+docker compose -f docker/demo/docker-compose.yml build
+docker compose -f docker/demo/docker-compose.yml run --rm demo
+```
+
+The default command checks frozen metrics under `repro_artifacts/illustrative/`
+and compiles the bundled golden harnesses with Clang + ASan/UBSan. Optional
+live reruns accept API keys **at runtime only** (`run-live` subcommand); keys
+are never baked into the image.
 
 ## Reproducibility
 
@@ -623,10 +729,13 @@ this RALFuzz repository or accompanying software article.
 @software{zhou2026ralfuzz,
   title = {RALFuzz},
   author = {Zhou, Jinyu and Zhu, Zitong and Xiong, Yuqi and Li, Zhijie and Wu, Jianxi},
-  version = {v0.1.0},
+  version = {v0.1.1},
   year = {2026},
   doi = {10.5281/zenodo.20116397}
 }
 ```
 
-The RALFuzz citation and software DOI will be added after archival.
+The DOI above archives the `v0.1.1` preliminary snapshot. A follow-up archived
+version that also bundles the Docker reproducibility capsule will be published
+once it is finalized, and this section will be updated with that release's
+version and DOI.

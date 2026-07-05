@@ -14,7 +14,14 @@ if __package__ in {None, ""}:
     sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent.parent))
 
 from api_specs import auto_discover_api_specs, enrich_missing_signatures, load_api_specs, load_prompt_template, sanitize_api_folder_name
-from execution_context import build_call_graph, collect_source_files, extract_call_sequence, infer_execution_context
+from execution_context import (
+    apply_execution_override,
+    build_call_graph,
+    collect_source_files,
+    extract_call_sequence,
+    infer_execution_context,
+    load_execution_override,
+)
 from llm_client import OpenAICompatClient, merge_usage
 from mutation.toolchain_env import configure_clang_environment, normalize_clang_compiler
 from prompting import build_prompt, build_risk_retry_prompt, build_truncation_retry_prompt
@@ -259,6 +266,12 @@ def main() -> None:
     parser.add_argument("--risk-card", dest="include_risk_card", action="store_true")
     parser.add_argument("--no-risk-card", dest="include_risk_card", action="store_false")
     parser.set_defaults(include_risk_card=True)
+    parser.add_argument("--signature-only-prompt", dest="signature_only_prompt", action="store_true")
+    parser.add_argument("--no-signature-only-prompt", dest="signature_only_prompt", action="store_false")
+    parser.set_defaults(signature_only_prompt=False)
+    parser.add_argument("--execution-context", dest="include_execution_context", action="store_true")
+    parser.add_argument("--no-execution-context", dest="include_execution_context", action="store_false")
+    parser.set_defaults(include_execution_context=True)
     parser.add_argument("--risk-min-marker-kinds", type=int, default=2)
     parser.add_argument("--risk-require-boundary-value", dest="risk_require_boundary_value", action="store_true")
     parser.add_argument("--no-risk-require-boundary-value", dest="risk_require_boundary_value", action="store_false")
@@ -336,24 +349,31 @@ def main() -> None:
     context_api_catalog = list(selected_api_catalog)
     context_signature_map = {s.api_name: s.api_signature for s in specs if s.api_signature}
     if args.auto_api_dir:
-        try:
-            context_specs = auto_discover_api_specs(
-                api_dirs=args.auto_api_dir,
-                style=args.auto_style,
-                api_name_regex=None,
-                header_globs=args.auto_header_glob,
-                exclude_header_globs=args.auto_exclude_header_glob,
-                recursive=not args.auto_non_recursive,
-                sort_by_name=False,
-            )
-        except Exception as exc:
-            print(f"Could not expand the full API catalog; continuing with selected APIs. Details: {exc}")
-        else:
+        if args.api_spec_file:
+            context_specs = load_api_specs(pathlib.Path(args.api_spec_file), args.default_header, args.doc_url_template)
             if context_specs:
                 context_api_catalog = [s.api_name for s in context_specs]
                 context_signature_map.update({s.api_name: s.api_signature for s in context_specs if s.api_signature})
-                if len(context_api_catalog) > len(selected_api_catalog):
-                    print(f"Prepared context hints from {len(context_api_catalog)} discovered API name(s).")
+                print(f"Prepared context hints from {len(context_api_catalog)} API spec(s) in {args.api_spec_file}.")
+        else:
+            try:
+                context_specs = auto_discover_api_specs(
+                    api_dirs=args.auto_api_dir,
+                    style=args.auto_style,
+                    api_name_regex=None,
+                    header_globs=args.auto_header_glob,
+                    exclude_header_globs=args.auto_exclude_header_glob,
+                    recursive=not args.auto_non_recursive,
+                    sort_by_name=False,
+                )
+            except Exception as exc:
+                print(f"Could not expand the full API catalog; continuing with selected APIs. Details: {exc}")
+            else:
+                if context_specs:
+                    context_api_catalog = [s.api_name for s in context_specs]
+                    context_signature_map.update({s.api_name: s.api_signature for s in context_specs if s.api_signature})
+                    if len(context_api_catalog) > len(selected_api_catalog):
+                        print(f"Prepared context hints from {len(context_api_catalog)} discovered API name(s).")
     if args.overwrite_existing:
         outputs: Dict[str, Dict] = {}
         seed_bank: Dict[str, Dict] = {}
@@ -410,6 +430,12 @@ def main() -> None:
             args.max_chain_len,
             context_signature_map,
         )
+        if args.auto_api_dir:
+            api_dirs = args.auto_api_dir if isinstance(args.auto_api_dir, list) else [args.auto_api_dir]
+            execution_context = apply_execution_override(
+                execution_context,
+                load_execution_override(api_dirs, spec.api_name),
+            )
         risk_context = infer_risk_context(spec, execution_context, risk_overrides, args.max_risk_tags, args.max_boundary_hints)
         prompt = build_prompt(
             template,
@@ -419,6 +445,8 @@ def main() -> None:
             execution_context,
             risk_context,
             include_risk_card=args.include_risk_card,
+            include_execution_context=args.include_execution_context,
+            signature_only_prompt=args.signature_only_prompt,
             risk_prompt_hardening=args.risk_prompt_hardening,
             risk_min_marker_kinds=args.risk_min_marker_kinds,
             risk_require_boundary_value=args.risk_require_boundary_value,

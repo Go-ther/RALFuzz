@@ -3,18 +3,54 @@ __pycache__/
 *.py[cod]
 *.pyo
 
-# Editor
+# Editor / OS
 .vscode/
-
-# OS / logs
 *.log
 .DS_Store
 Thumbs.db
 
-# Local env
+# Secrets and local env (never commit)
 .env
+.ralfuzz.env.local
 .venv/
 venv/
+docker/**/.env
+docker/**/.env.llm
+
+# Regenerated at runtime or via fetch scripts
+runtime_data/
+api/cJSON/
+
+# Local-only material (papers, reviews, external clones, experiment Docker envs)
+docs/
+RALFuzz-论文/
+external/
+docker/compare/
+docker/ogharn/
+docker/llm4fdg/
+
+# Experiment target trees (public artifact ships api/README.md only)
+api/*
+!api/README.md
+
+# Paper-scale batch / baseline tooling (not part of the public artifact)
+pipeline/check_llm_env.py
+pipeline/downstream_manual/
+pipeline/fetch_libucl.ps1
+pipeline/plot_metadata_scaling_preview.py
+pipeline/rerun_afl_variance.sh
+pipeline/run_baseline_*
+pipeline/run_coverage_*
+pipeline/run_downstream_*
+pipeline/run_experiment_batch.py
+pipeline/run_llm4fdg_*
+pipeline/run_metadata_scaling.py
+pipeline/run_model_sensitivity.py
+pipeline/run_ogharn_*
+pipeline/run_rq1_supplement_batches.ps1
+pipeline/run_scheduler_stage2.py
+pipeline/smoke_libucl_*
+pipeline/summarize_*
 
 # Test / tooling caches
 .cache/
@@ -23,10 +59,6 @@ venv/
 .ruff_cache/
 .coverage
 htmlcov/
-
-# Runtime outputs and caches
-runtime_data/
-api/cJSON/
 
 # Packaging / release archives
 *.egg-info/
